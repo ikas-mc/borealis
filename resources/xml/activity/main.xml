@@ -5,6 +5,12 @@
         title="@i18n/demo/title"
         icon="@res/img/borealis_96.png">
 
+        <brls:Tab label="@i18n/demo/tabs/settings">
+            <SettingsTab />
+        </brls:Tab>
+
+        <brls:Separator />
+
         <!-- Dynamic tab - required to get references to the views in the code -->
         <brls:Tab label="@i18n/demo/tabs/components" >
             <ComponentsTab />
@@ -23,12 +29,6 @@
 
         <brls:Tab label="@i18n/demo/tabs/pokedex">
             <RecyclingListTab />
-        </brls:Tab>
-
-        <brls:Separator />
-
-        <brls:Tab label="@i18n/demo/tabs/settings">
-            <SettingsTab />
         </brls:Tab>
 
 <!--        <brls:Separator />-->

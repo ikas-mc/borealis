@@ -33,6 +33,7 @@ class SettingsTab : public brls::Box
     BRLS_BIND(brls::BooleanCell, debug, "debug");
     BRLS_BIND(brls::BooleanCell, bottomBar, "bottomBar");
     BRLS_BIND(brls::BooleanCell, fps, "fps");
+    BRLS_BIND(brls::DetailCell, texture, "texture");
 
     static brls::View* create();
 };

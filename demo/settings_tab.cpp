@@ -16,6 +16,8 @@
 
 #include "settings_tab.hpp"
 
+#include <nanovg.h>
+
 using namespace brls::literals;  // for _i18n
 
 bool radioSelected = false;
@@ -79,6 +81,21 @@ SettingsTab::SettingsTab()
 
     ipAddress->setDetailText(brls::Application::getPlatform()->getIpAddress());
     dnsServer->setDetailText(brls::Application::getPlatform()->getDnsServer());
+
+    texture->setDetailText("alloc 1000 textures");
+    texture->registerClickAction([](...){
+            std::string path = std::string(BRLS_RESOURCES) + "img/borealis_256.png";
+            auto nvg = brls::Application::getNVGContext();
+            for(int i = 0; i < 1000; i++) {
+                int tex = nvgCreateImage(nvg, path.c_str(), 0);
+                if (tex == 0) {
+                    brls::Logger::error("Failed to alloc texture {}");
+                } else {
+                    brls::Logger::info("Alloc texture success, handle: {}", tex);
+                }
+            }
+            return true;
+    });
 
     input->registerAction("hints/open"_i18n, brls::BUTTON_X, [](brls::View* view) {
         brls::DetailCell *cell = dynamic_cast<brls::DetailCell *>(view);

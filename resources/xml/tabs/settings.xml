@@ -19,6 +19,13 @@
             paddingRight="@style/brls/sidebar/padding_right"
             paddingBottom="@style/brls/sidebar/padding_bottom"
             paddingLeft="@style/brls/sidebar/padding_left">
+
+            <brls:BooleanCell
+                    id="debug"/>
+
+            <brls:DetailCell
+                    title="Texture test"
+                    id="texture"/>
             
             <brls:RadioCell
                 id="radio"/>
@@ -42,9 +49,6 @@
             <brls:DetailCell
                 title="DNS"
                 id="dnsServer"/>
-
-            <brls:BooleanCell
-                id="debug"/>
 
             <brls:BooleanCell
                 id="bottomBar"/>
