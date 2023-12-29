@@ -44,9 +44,11 @@
 #include <winrt/Windows.Networking.Connectivity.h>
 #include <winrt/Windows.Devices.WiFi.h>
 #include <winrt/Windows.UI.ViewManagement.h>
+#include <winrt/Windows.System.Display.h>
 using winrt::Windows::Devices::WiFi::WiFiAdapter;
 using winrt::Windows::UI::ViewManagement::UIColorType;
 using winrt::Windows::UI::ViewManagement::UISettings;
+using winrt::Windows::System::Display::DisplayRequest;
 #endif
 
 #if defined(__APPLE__) || defined(__linux__)
@@ -624,6 +626,16 @@ void DesktopPlatform::disableScreenDimming(bool disable, const std::string& reas
         [[maybe_unused]] IOReturn success = IOPMAssertionCreateWithName(
             kIOPMAssertionTypeNoDisplaySleep, kIOPMAssertionLevelOn,
             reasonForActivity, &assertionID);
+#elif __WINRT__
+        try
+        {
+            DisplayRequest request{};
+            request.RequestRelease();
+        }
+        catch(const std::exception& e)
+        {
+              Logger::warning("Winrt DisplayRequest release failed {}", e.what());
+        }
 #elif _WIN32
         SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_CONTINUOUS);
 #endif
@@ -637,6 +649,16 @@ void DesktopPlatform::disableScreenDimming(bool disable, const std::string& reas
             dbusUnInhibit(dbus_conn.get(), inhibitCookie);
 #elif __APPLE__
         IOPMAssertionRelease(assertionID);
+#elif __WINRT__
+        try
+        {
+            DisplayRequest request{};
+            request.RequestActive();
+        }
+        catch(const std::exception& e)
+        {
+              Logger::warning("Winrt DisplayRequest active failed {}", e.what());
+        }
 #elif _WIN32
         SetThreadExecutionState(ES_CONTINUOUS);
 #endif
