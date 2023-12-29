@@ -126,14 +126,7 @@ bool D3D11Context::initDX(HWND hWnd, IUnknown* coreWindow, int width, int height
         swapDesc.Scaling            = DXGI_SCALING_STRETCH;
         swapDesc.SwapEffect         = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 #ifdef __WINRT__
-        if (IsWindows8OrGreater())
-        {
-            swapDesc.Scaling = DXGI_SCALING_NONE;
-        }
-        else
-        {
-            swapDesc.Scaling = DXGI_SCALING_STRETCH;
-        }
+        swapDesc.Scaling = DXGI_SCALING_NONE;
 #endif
 #if WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP
         swapDesc.Scaling    = DXGI_SCALING_STRETCH;
