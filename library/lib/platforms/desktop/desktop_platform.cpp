@@ -39,6 +39,7 @@
 #endif
 
 #ifdef __WINRT__
+#include <ppltasks.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Networking.Connectivity.h>
@@ -65,26 +66,30 @@ const static auto timeout = std::chrono::milliseconds(500);
 
 int winrt_wlan_quality()
 {
-    auto async = WiFiAdapter::FindAllAdaptersAsync();
-    auto code  = async.wait_for(timeout);
-    if (code == winrt::Windows::Foundation::AsyncStatus::Completed)
-    {
-        auto adapters = async.GetResults();
-        for (auto it : adapters)
+    //wait_for can't run in ui thread
+    //TODO  caller refactor or other @ikas
+    return  concurrency::create_task([&] {
+        auto async = WiFiAdapter::FindAllAdaptersAsync();
+        auto code = async.wait_for(timeout);
+        if (code == winrt::Windows::Foundation::AsyncStatus::Completed)
         {
-            auto profileAsync = it.NetworkAdapter().GetConnectedProfileAsync();
-            auto profileCode  = profileAsync.wait_for(timeout);
-            if (profileCode == winrt::Windows::Foundation::AsyncStatus::Completed)
+            auto adapters = async.GetResults();
+            for (auto it : adapters)
             {
-                auto profile = profileAsync.GetResults();
-                if (profile != nullptr && profile.IsWlanConnectionProfile())
+                auto profileAsync = it.NetworkAdapter().GetConnectedProfileAsync();
+                auto profileCode = profileAsync.wait_for(timeout);
+                if (profileCode == winrt::Windows::Foundation::AsyncStatus::Completed)
                 {
-                    return int(profile.GetNetworkConnectivityLevel());
+                    auto profile = profileAsync.GetResults();
+                    if (profile != nullptr && profile.IsWlanConnectionProfile())
+                    {
+                        return int(profile.GetNetworkConnectivityLevel());
+                    }
                 }
             }
         }
-    }
-    return -1; // No WiFi Adapter found.
+        return -1; // No WiFi Adapter found.
+    }).get();
 }
 #elif defined(_WIN32)
 void shell_open(const char* command)
@@ -878,6 +883,20 @@ void DesktopPlatform::openBrowser(std::string url)
 #elif __linux__
     std::string cmd = "xdg-open \"" + url + "\"";
     system(cmd.c_str());
+#elif __WINRT__
+    auto rawUrl = winrt::to_hstring(url);
+    winrt::Windows::Foundation::Uri uri{ rawUrl };
+    if (uri.SchemeName() == winrt::to_hstring("file")) {
+        //must be called from UI thread
+        auto task= winrt::Windows::System::Launcher::LaunchFolderPathAsync(rawUrl);
+        auto success= concurrency::create_task([task] {
+           return task.get();
+        }).get();
+        if (success) {
+            return;
+        }
+    }
+    winrt::Windows::System::Launcher::LaunchUriAsync(uri);
 #elif __SDL2__
     SDL_OpenURL(url.c_str());
 #elif defined(_WIN32) and !defined(__WINRT__)
