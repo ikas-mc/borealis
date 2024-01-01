@@ -635,7 +635,7 @@ void DesktopPlatform::disableScreenDimming(bool disable, const std::string& reas
         try
         {
             DisplayRequest request{};
-            request.RequestRelease();
+            request.RequestActive();
         }
         catch(const std::exception& e)
         {
@@ -658,7 +658,7 @@ void DesktopPlatform::disableScreenDimming(bool disable, const std::string& reas
         try
         {
             DisplayRequest request{};
-            request.RequestActive();
+            request.RequestRelease();
         }
         catch(const std::exception& e)
         {
