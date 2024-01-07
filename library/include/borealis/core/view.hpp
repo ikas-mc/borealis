@@ -226,7 +226,7 @@ class View
   private:
     ViewBackground background = ViewBackground::NONE;
 
-    void drawBackground(NVGcontext* vg, FrameContext* ctx, Style style);
+    void drawBackground(NVGcontext* vg, FrameContext* ctx, Style style, Rect frame);
     void drawShadow(NVGcontext* vg, FrameContext* ctx, Style style, Rect frame);
     void drawBorder(NVGcontext* vg, FrameContext* ctx, Style style, Rect frame);
     void drawHighlight(NVGcontext* vg, Theme theme, float alpha, Style style, bool background);
@@ -333,6 +333,7 @@ class View
     Box* parent              = nullptr;
 
     GenericEvent focusEvent;
+    GenericEvent focusLostEvent;
 
     YGNode* ygNode;
 
@@ -1450,6 +1451,7 @@ class View
     }
 
     GenericEvent* getFocusEvent();
+    GenericEvent* getFocusLostEvent();
 
     Animatable alpha = 1.0f;
 
