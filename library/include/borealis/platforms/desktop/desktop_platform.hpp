@@ -22,8 +22,11 @@
 #include <borealis/platforms/desktop/desktop_ime.hpp>
 #if defined(__linux__) and not defined(ANDROID)
 #include <dbus/dbus.h>
-#elif IOS
-#elif __APPLE__
+#elif defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#elif defined(IOS)
+#elif defined(__APPLE__)
 #include <IOKit/pwr_mgt/IOPMLib.h>
 #endif
 
@@ -52,7 +55,11 @@ class DesktopPlatform : public Platform
     int getWirelessLevel() override;
     bool hasEthernetConnection() override;
     void disableScreenDimming(bool disable, const std::string& reason, const std::string& app) override;
+    bool runLoop(const std::function<bool()>& runLoopImpl) override;
     bool isScreenDimmingDisabled() override;
+    void setBacklightBrightness(float brightness) override;
+    float getBacklightBrightness() override;
+    bool canSetBacklightBrightness() override;
     std::string getIpAddress() override;
     std::string getDnsServer() override;
     std::string exec(const char* cmd);
@@ -72,8 +79,10 @@ class DesktopPlatform : public Platform
     bool screenDimmingDisabled = false;
 #ifdef __linux__
     uint32_t inhibitCookie = 0;
-#elif IOS
-#elif __APPLE__
+#elif defined(_WIN32)
+    HANDLE hLCD;
+#elif defined(IOS)
+#elif defined(__APPLE__)
     IOPMAssertionID assertionID = 0;
 #endif
 };

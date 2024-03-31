@@ -20,6 +20,7 @@
 #include <borealis/core/i18n.hpp>
 #include <borealis/core/logger.hpp>
 #include <borealis/platforms/desktop/desktop_platform.hpp>
+#include <borealis/platforms/desktop/steam_deck.hpp>
 #include <memory>
 #include <sstream>
 
@@ -31,6 +32,9 @@
 #include <winsock2.h>
 #include <iphlpapi.h>
 #include <wlanapi.h>
+#include <shellapi.h>
+#include <winioctl.h>
+#include <Ntddvdeo.h>
 #elif IOS
 #elif __APPLE__
 #include <IOKit/ps/IOPSKeys.h>
@@ -135,8 +139,13 @@ int win32_wlan_quality()
     return quality;
 }
 #elif IOS
+extern ThemeVariant ios_theme();
+extern uint8_t ios_battery_status();
+extern float ios_battery();
+extern bool darwin_runloop(const std::function<bool()>& runLoopImpl);
 #elif __APPLE__
 extern int darwin_wlan_quality();
+extern bool darwin_runloop(const std::function<bool()>& runLoopImpl);
 
 /// @return low 7bit is current capacity
 int darwin_get_powerstate()
@@ -392,6 +401,7 @@ DesktopPlatform::DesktopPlatform()
     if (themeEnv == nullptr)
     {
 #if defined(IOS)
+        this->themeVariant = ios_theme();
 #elif __APPLE__
         CFPropertyListRef propertyList = CFPreferencesCopyValue(
             CFSTR("AppleInterfaceStyle"),
@@ -446,6 +456,11 @@ DesktopPlatform::DesktopPlatform()
         brls::Logger::info("Set app locale: {}", this->locale);
     }
 
+#if defined(__WINRT__)
+#elif defined(_WIN32)
+    this->hLCD = ::CreateFileA("\\\\.\\LCD", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+#endif
+
     // Platform impls
     this->fontLoader = new DesktopFontLoader();
     this->imeManager = new DesktopImeManager();
@@ -454,6 +469,7 @@ DesktopPlatform::DesktopPlatform()
 bool DesktopPlatform::canShowBatteryLevel()
 {
 #if defined(IOS)
+    return ios_battery_status() != 0;
 #elif defined(__APPLE__)
     return darwin_get_powerstate() >= 0;
 #elif defined(_WIN32)
@@ -481,6 +497,7 @@ bool DesktopPlatform::canShowWirelessLevel()
 int DesktopPlatform::getBatteryLevel()
 {
 #if defined(IOS)
+    return ios_battery() * 100;
 #elif defined(__APPLE__)
     return darwin_get_powerstate() & 0x7F;
 #elif defined(_WIN32)
@@ -496,6 +513,7 @@ int DesktopPlatform::getBatteryLevel()
 bool DesktopPlatform::isBatteryCharging()
 {
 #if defined(IOS)
+    return ios_battery_status() == 2;
 #elif defined(__APPLE__)
     return darwin_get_powerstate() & 0x80;
 #elif defined(_WIN32)
@@ -670,9 +688,77 @@ void DesktopPlatform::disableScreenDimming(bool disable, const std::string& reas
     }
 }
 
+bool DesktopPlatform::runLoop(const std::function<bool()>& runLoopImpl) {
+#if __APPLE__
+    return darwin_runloop(runLoopImpl);
+#else
+    return runLoopImpl();
+#endif
+}
+
 bool DesktopPlatform::isScreenDimmingDisabled()
 {
     return this->screenDimmingDisabled;
+}
+
+void DesktopPlatform::setBacklightBrightness(float brightness)
+{
+#if defined(__WINRT__)
+    (void)brightness;
+#elif defined(_WIN32)
+    DISPLAY_BRIGHTNESS db = {
+        .ucDisplayPolicy = DISPLAYPOLICY_BOTH,
+        .ucACBrightness = (UCHAR)std::floor(brightness * 100),
+        .ucDCBrightness = (UCHAR)std::floor(brightness * 100),
+    };
+    DeviceIoControl(this->hLCD, IOCTL_VIDEO_SET_DISPLAY_BRIGHTNESS,
+        &db, sizeof(db), NULL, 0, NULL, NULL);
+#elif defined(__linux__)
+    setSteamDeckBrightness(brightness);
+#else
+    (void)brightness;
+#endif
+}
+
+float DesktopPlatform::getBacklightBrightness()
+{
+#if defined(__WINRT__)
+    return 0.0f;
+#elif defined(_WIN32)
+    DISPLAY_BRIGHTNESS db;
+    DeviceIoControl(this->hLCD, IOCTL_VIDEO_QUERY_DISPLAY_BRIGHTNESS,
+        NULL, 0, &db, sizeof(db), NULL, NULL);
+    return db.ucACBrightness / 100.0f;
+#elif defined(__linux__)
+    return getSteamDeckBrightness();
+#else
+    return 0.0f;
+#endif
+}
+
+bool DesktopPlatform::canSetBacklightBrightness()
+{
+#if defined(__WINRT__)
+#elif defined(_WIN32)
+    UCHAR abLevels[256];
+    DWORD bytesReturned = 0;
+    DeviceIoControl(
+        this->hLCD,
+        IOCTL_VIDEO_QUERY_SUPPORTED_BRIGHTNESS,
+        NULL,
+        0,
+        abLevels,
+        sizeof(abLevels),
+        &bytesReturned,
+        NULL);
+
+    for (DWORD i = 0; i < bytesReturned; i++) {
+        if (abLevels[i]) return true;
+    }
+#elif defined(__linux__)
+    return isSteamDeckBrightnessSupported();
+#endif
+    return false;
 }
 
 std::string DesktopPlatform::getIpAddress()
@@ -875,14 +961,12 @@ void DesktopPlatform::forceEnableGamePlayRecording()
 void DesktopPlatform::openBrowser(std::string url)
 {
     brls::Logger::debug("open url: {}", url);
-#if defined(IOS)
+#if __SDL2__
+    SDL_OpenURL(url.c_str());
 #elif __APPLE__
     std::string cmd = "open \"" + url + "\"";
     system(cmd.c_str());
-#elif ANDROID
 #elif __linux__
-    std::string cmd = "xdg-open \"" + url + "\"";
-    system(cmd.c_str());
 #elif __WINRT__
     auto rawUrl = winrt::to_hstring(url);
     winrt::Windows::Foundation::Uri uri{ rawUrl };
@@ -897,8 +981,14 @@ void DesktopPlatform::openBrowser(std::string url)
         }
     }
     winrt::Windows::System::Launcher::LaunchUriAsync(uri);
-#elif __SDL2__
-    SDL_OpenURL(url.c_str());
+    if (isSteamDeck())
+    {
+        runSteamDeckCommand(fmt::format("steam://openurl/{}\n", url));
+    } else
+    {
+        std::string cmd = "xdg-open \"" + url + "\"";
+        system(cmd.c_str());
+    }
 #elif defined(_WIN32) and !defined(__WINRT__)
     shell_open(url.c_str());
 #endif
@@ -936,6 +1026,11 @@ std::string DesktopPlatform::getLocale()
 
 DesktopPlatform::~DesktopPlatform()
 {
+#if defined(__WINRT__)
+#elif defined(_WIN32)
+    if (this->hLCD) ::CloseHandle(this->hLCD);
+#endif
+
     delete this->fontLoader;
     delete this->imeManager;
 }

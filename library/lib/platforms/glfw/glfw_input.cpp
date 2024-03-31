@@ -29,7 +29,7 @@ namespace brls
 
 #define GLFW_GAMEPAD_BUTTON_NONE SIZE_MAX
 #define GLFW_GAMEPAD_BUTTON_MAX 15
-#define GLFW_GAMEPAD_AXIS_MAX 4
+#define GLFW_GAMEPAD_AXIS_MAX 6
 
 // LT and RT do not exist here because they are axes
 static const size_t GLFW_BUTTONS_MAPPING[GLFW_GAMEPAD_BUTTON_MAX] = {
@@ -52,7 +52,7 @@ static const size_t GLFW_BUTTONS_MAPPING[GLFW_GAMEPAD_BUTTON_MAX] = {
 
 static const size_t GLFW_GAMEPAD_TO_KEYBOARD[GLFW_GAMEPAD_BUTTON_MAX] = {
     GLFW_KEY_ENTER, // GLFW_GAMEPAD_BUTTON_A
-    GLFW_KEY_BACKSPACE, // GLFW_GAMEPAD_BUTTON_B
+    GLFW_KEY_RIGHT_CONTROL, // GLFW_GAMEPAD_BUTTON_B
     GLFW_KEY_X, // GLFW_GAMEPAD_BUTTON_X
     GLFW_KEY_Y, // GLFW_GAMEPAD_BUTTON_Y
     GLFW_KEY_L, // GLFW_GAMEPAD_BUTTON_LEFT_BUMPER
@@ -73,6 +73,8 @@ static const size_t GLFW_AXIS_MAPPING[GLFW_GAMEPAD_AXIS_MAX] = {
     LEFT_Y,
     RIGHT_X,
     RIGHT_Y,
+    LEFT_Z,
+    RIGHT_Z,
 };
 
 static short controllersCount = 0;
@@ -99,12 +101,12 @@ static void glfwJoystickCallback(int jid, int event)
     Application::setActiveEvent(true);
 }
 
-static RawTouchState touchState = {0,0,{0,0}};
+static RawTouchState touchState = { 0, 0, { 0, 0 } };
 
 static void glfwTouchCallback(GLFWwindow* window, int touch, int action, double xpos, double ypos)
 {
-    touchState.fingerId = 0;
-    touchState.pressed = true;
+    touchState.fingerId   = 0;
+    touchState.pressed    = true;
     touchState.position.x = xpos / Application::windowScale;
     touchState.position.y = ypos / Application::windowScale;
     Application::setActiveEvent(true);
@@ -235,7 +237,7 @@ void GLFWInputManager::updateUnifiedControllerState(ControllerState* state)
 
     for (int i = 0; i < GAMEPADS_MAX; i++)
     {
-        ControllerState localState;
+        ControllerState localState {};
         updateControllerState(&localState, i);
 
         for (size_t i = 0; i < _BUTTON_MAX; i++)
@@ -260,6 +262,12 @@ void GLFWInputManager::updateUnifiedControllerState(ControllerState* state)
         if (key != GLFW_GAMEPAD_BUTTON_NONE)
             state->buttons[brlsButton] |= glfwGetKey(this->window, key) != 0;
     }
+
+    state->buttons[BUTTON_X] |= (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS);
+
+    state->buttons[BUTTON_BACKSPACE] = glfwGetKey(this->window, GLFW_KEY_BACKSPACE);
+    state->buttons[BUTTON_SPACE]     = glfwGetKey(this->window, GLFW_KEY_SPACE);
+    state->buttons[BUTTON_F]         = glfwGetKey(this->window, GLFW_KEY_F);
 
     state->buttons[BUTTON_NAV_UP] |= state->buttons[BUTTON_UP];
     state->buttons[BUTTON_NAV_RIGHT] |= state->buttons[BUTTON_RIGHT];
@@ -287,8 +295,6 @@ void GLFWInputManager::updateControllerState(ControllerState* state, int control
     state->buttons[BUTTON_NAV_RIGHT] = glfwState.axes[GLFW_GAMEPAD_AXIS_LEFT_X] > 0.5f || glfwState.axes[GLFW_GAMEPAD_AXIS_RIGHT_X] > 0.5f || state->buttons[BUTTON_RIGHT];
     state->buttons[BUTTON_NAV_DOWN]  = glfwState.axes[GLFW_GAMEPAD_AXIS_LEFT_Y] > 0.5f || glfwState.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y] > 0.5f || state->buttons[BUTTON_DOWN];
     state->buttons[BUTTON_NAV_LEFT]  = glfwState.axes[GLFW_GAMEPAD_AXIS_LEFT_X] < -0.5f || glfwState.axes[GLFW_GAMEPAD_AXIS_RIGHT_X] < -0.5f || state->buttons[BUTTON_LEFT];
-
-    state->buttons[BUTTON_X] |= (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS);
 
     for (size_t i = 0; i < GLFW_GAMEPAD_AXIS_MAX; i++)
     {
@@ -331,15 +337,15 @@ void GLFWInputManager::updateMouseStates(RawMouseState* state)
 
 #if defined(BOREALIS_USE_METAL) || defined(BOREALIS_USE_D3D11)
     // 使用 metal, d3d11 的 cocoa 窗口鼠标事件不需要进行 dpi 缩放。
-    state->position.x  = x / Application::windowScale;
-    state->position.y  = y / Application::windowScale;
+    state->position.x = x / Application::windowScale;
+    state->position.y = y / Application::windowScale;
 #else
     double scaleFactor = brls::Application::getPlatform()->getVideoContext()->getScaleFactor();
     state->position.x  = x * scaleFactor / Application::windowScale;
     state->position.y  = y * scaleFactor / Application::windowScale;
 #endif
-    state->offset      = pointerOffset;
-    state->scroll      = scrollOffset;
+    state->offset = pointerOffset;
+    state->scroll = scrollOffset;
 }
 
 void GLFWInputManager::setPointerLock(bool lock)

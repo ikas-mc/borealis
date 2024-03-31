@@ -205,6 +205,10 @@ enum ControllerButton
     BUTTON_NAV_DOWN,
     BUTTON_NAV_LEFT,
 
+    BUTTON_SPACE,
+    BUTTON_F,
+    BUTTON_BACKSPACE,
+
     _BUTTON_MAX,
 };
 
@@ -214,10 +218,11 @@ enum ControllerAxis
     LEFT_X,
     LEFT_Y,
 
-    // No Z axis, LT and RT are in the buttons enum for the sake of simplicity
-
     RIGHT_X, // also called 5th axis
     RIGHT_Y, // also called 4th axis
+
+    LEFT_Z, // LT
+    RIGHT_Z, // RT
 
     _AXES_MAX,
 };
@@ -227,6 +232,21 @@ struct KeyState
     BrlsKeyboardScancode key;
     short mods;
     bool pressed;
+};
+
+enum class SensorEventType
+{
+    GYRO,
+    ACCEL
+};
+
+// Represents the state of the controller's sensor
+struct SensorEvent
+{
+    int controllerIndex;
+    SensorEventType type;
+    float data[3];
+    uint32_t timestamp;
 };
 
 // Represents the state of the controller (a gamepad or a keyboard) in the current frame
@@ -338,6 +358,10 @@ class InputManager
         return &mouseScrollOffsetChanged;
     }
 
+    inline Event<SensorEvent>* getControllerSensorStateChanged() {
+        return &controllerSensorStateChanged;
+    }
+
     inline Event<KeyState>* getKeyboardKeyStateChanged()
     {
         return &keyboardKeyStateChanged;
@@ -359,6 +383,7 @@ class InputManager
     Event<Point> mouseCusorOffsetChanged;
     Event<Point> mouseScrollOffsetChanged;
     Event<KeyState> keyboardKeyStateChanged;
+    Event<SensorEvent> controllerSensorStateChanged;
 };
 
 }; // namespace brls

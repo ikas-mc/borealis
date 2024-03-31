@@ -166,11 +166,29 @@ bool SDLPlatform::processEvent(SDL_Event* event)
     {
         return false;
     }
+    else if (event->type == SDL_KEYDOWN || event->type == SDL_KEYUP)
+    {
+        auto* manager = this->inputManager;
+        if (manager)
+            manager->updateKeyboardState(event->key);
+    }
+    else if (event->type == SDL_MOUSEMOTION)
+    {
+        auto* manager = this->inputManager;
+        if (manager)
+            manager->updateMouseMotion(event->motion);
+    }
     else if (event->type == SDL_MOUSEWHEEL)
     {
         auto* manager = this->inputManager;
         if (manager)
             manager->updateMouseWheel(event->wheel);
+    }
+    else if (event->type == SDL_CONTROLLERSENSORUPDATE)
+    {
+        auto* manager = this->inputManager;
+        if (manager)
+            manager->updateControllerSensorsUpdate(event->csensor);
     }
 #ifdef IOS
     else if (event->type == SDL_APP_WILLENTERBACKGROUND)

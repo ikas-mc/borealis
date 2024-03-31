@@ -35,16 +35,6 @@ using namespace brls::literals;
 namespace brls
 {
 
-static bool endsWith(const std::string& data, const std::string& suffix)
-{
-    return data.find(suffix, data.size() - suffix.size()) != std::string::npos;
-}
-
-static bool startsWith(const std::string& data, const std::string& prefix)
-{
-    return data.rfind(prefix, 0) == 0;
-}
-
 void AppletFrameItem::setHintView(View* hintView)
 {
     this->hintView = hintView;
@@ -53,8 +43,12 @@ void AppletFrameItem::setHintView(View* hintView)
 
 AppletFrameItem::~AppletFrameItem()
 {
-    if (hintView)
-        delete hintView;
+    if (hintView) {
+        if (!hintView->isPtrLocked())
+            delete hintView;
+        else
+            hintView->freeView();
+    }
 }
 
 View::View()
@@ -542,6 +536,14 @@ void View::drawHighlight(NVGcontext* vg, Theme theme, float alpha, Style style, 
     }
     else
     {
+#ifdef SIMPLE_HIGHLIGHT
+        // Border
+        nvgBeginPath(vg);
+        nvgStrokeColor(vg, a(theme["brls/highlight/color1"]));
+        nvgStrokeWidth(vg, style["brls/highlight/stroke_width"]);
+        nvgRoundedRect(vg, x, y, width, height, cornerRadius);
+        nvgStroke(vg);
+#else
         float shadowOffset = style["brls/highlight/shadow_offset"];
 
         // Shadow
@@ -602,6 +604,7 @@ void View::drawHighlight(NVGcontext* vg, Theme theme, float alpha, Style style, 
         nvgStrokeWidth(vg, strokeWidth);
         nvgRoundedRect(vg, x, y, width, height, cornerRadius);
         nvgStroke(vg);
+#endif
     }
 
     nvgRestore(vg);

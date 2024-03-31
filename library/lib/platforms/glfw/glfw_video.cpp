@@ -55,6 +55,7 @@ std::unique_ptr<brls::D3D11Context> D3D11_CONTEXT;
 #endif
 
 #ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
 
@@ -239,7 +240,7 @@ GLFWVideoContext::GLFWVideoContext(const std::string& windowTitle, uint32_t wind
 #endif
 
 // create window
-#if defined(__linux__) || defined(_WIN32)
+#if defined(__linux__) || defined(_WIN32) || defined(__APPLE__)
     if (VideoContext::FULLSCREEN)
     {
         glfwWindowHint(GLFW_SOFT_FULLSCREEN, 1);
@@ -442,17 +443,17 @@ void GLFWVideoContext::clear(NVGcolor color)
         color.r,
         color.g,
         color.b,
-        1.0f);
+        color.a);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 #elif defined(BOREALIS_USE_METAL)
-    nvgClearWithColor(nvgContext, nvgRGBAf(color.r, color.g, color.b, 1.0f));
+    nvgClearWithColor(nvgContext, nvgRGBAf(color.r, color.g, color.b, color.a));
 #elif defined(BOREALIS_USE_D3D11)
     D3D11_CONTEXT->clear(nvgRGBAf(
         color.r,
         color.g,
         color.b,
-        1.0f));
+        color.a));
 #endif
 }
 
@@ -551,6 +552,9 @@ void GLFWVideoContext::fullScreen(bool fs)
     else
     {
         GLFWmonitor* monitor    = glfwGetWindowMonitor(this->window);
+        // already in windowed mode
+        if (monitor == nullptr)
+            return;
         const GLFWvidmode* mode = glfwGetVideoMode(monitor);
         int monitorX, monitorY;
         glfwGetMonitorPos(monitor, &monitorX, &monitorY);

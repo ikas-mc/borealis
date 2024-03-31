@@ -159,6 +159,11 @@ void Application::createWindow(std::string windowTitle)
 
 bool Application::mainLoop()
 {
+    return Application::platform->runLoop(internalMainLoop);
+}
+
+bool Application::internalMainLoop()
+{
     Application::updateFPS();
     Application::frameStartTime = getCPUTimeUsec();
     Application::setActiveEvent(false);
@@ -184,7 +189,9 @@ bool Application::mainLoop()
     }
 
     // Animations
+#ifndef SIMPLE_HIGHLIGHT
     updateHighlightAnimation();
+#endif
     Ticking::updateTickings();
 
     // Render
@@ -196,8 +203,9 @@ bool Application::mainLoop()
     // Trigger RunLoop subscribers
     runLoopEvent.fire();
 
-    // Free views deletion pool
-    std::set<View*> undeletedViews;
+    // Free views deletion pool.
+    // A view deletion might inserts other views to deletionPool
+    std::deque<View*> undeletedViews;
     for (auto view : Application::deletionPool)
     {
         if (!view->isPtrLocked())
@@ -206,7 +214,7 @@ bool Application::mainLoop()
         }
         else
         {
-            undeletedViews.insert(view);
+            undeletedViews.push_back(view);
             brls::Logger::verbose("Application: will delete view: {}", view->describe());
         }
     }
@@ -375,10 +383,10 @@ void Application::processInput()
         if (controllerState.buttons[i])
         {
             repeating = controllerState.repeatingButtonStop[i] > 0 && cpuTime > controllerState.repeatingButtonStop[i];
-            
+
             if (repeating)
                 controllerState.repeatingButtonStop[i] = cpuTime + BUTTON_REPEAT_DELAY;
-            
+
             if (!oldControllerState.buttons[i])
                 controllerState.repeatingButtonStop[i] = cpuTime + BUTTOM_REPEAT_TRIGGER;
 
@@ -646,7 +654,7 @@ void Application::frame()
     frameContext.theme      = Application::getTheme();
 
     // Begin frame and clear
-    NVGcolor backgroundColor = frameContext.theme["brls/background"];
+    NVGcolor backgroundColor = frameContext.theme["brls/clear"];
     videoContext->beginFrame();
     videoContext->clear(backgroundColor);
     float scaleFactor = videoContext->getScaleFactor();
@@ -938,8 +946,12 @@ std::string Application::getLocale()
 
 void Application::addToFreeQueue(View* view)
 {
+    if (std::binary_search(deletionPool.cbegin(), deletionPool.cend(), view))
+        return;
+    
     brls::Logger::verbose("Application::addToFreeQueue {}", view->describe());
-    deletionPool.insert(view);
+
+    Application::deletionPool.push_back(view);
 }
 
 void Application::tryDeinitFirstResponder(View* view)

@@ -19,6 +19,7 @@
 #include <borealis/core/thread.hpp>
 #include <borealis/platforms/sdl/sdl_video.hpp>
 #ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
 #ifdef BOREALIS_USE_OPENGL
@@ -99,7 +100,7 @@ static void sdlWindowPositionCallback(SDL_Window* window, int windowXPos, int wi
     }
 }
 
-static int sdlEventWatcher(void* data, SDL_Event* event)
+static int sdlWindowEventWatcher(void* data, SDL_Event* event)
 {
     if (event->type == SDL_WINDOWEVENT)
     {
@@ -264,7 +265,7 @@ SDLVideoContext::SDLVideoContext(std::string windowTitle, uint32_t windowWidth, 
     SDL_GLContext context = SDL_GL_CreateContext(window);
     SDL_GL_MakeCurrent(window, context);
 #endif
-    SDL_AddEventWatch(sdlEventWatcher, window);
+    SDL_AddEventWatch(sdlWindowEventWatcher, window);
 #ifdef BOREALIS_USE_OPENGL
 #if !defined(__PSV__) && !defined(PS4)
     // Load OpenGL routines using glad
@@ -353,7 +354,7 @@ void SDLVideoContext::clear(NVGcolor color)
         color.r,
         color.g,
         color.b,
-        1.0f);
+        color.a);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 #elif defined(BOREALIS_USE_D3D11)
@@ -361,7 +362,7 @@ void SDLVideoContext::clear(NVGcolor color)
         color.r,
         color.g,
         color.b,
-        1.0f));
+        color.a));
 #endif
 }
 

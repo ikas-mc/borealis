@@ -42,6 +42,9 @@ if (USE_BOOST_FILESYSTEM)
         list(APPEND BRLS_PLATFORM_LIBS Boost::filesystem)
         list(APPEND BRLS_PLATFORM_OPTION -DUSE_BOOST_FILESYSTEM)
     endif()
+elseif ((CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.1) OR
+    (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND NOT WIN32) AND NOT PLATFORM_ANDROID AND NOT PLATFORM_PS4)
+    list(APPEND BRLS_PLATFORM_LIBS stdc++fs)
 endif ()
 
 # libromfs
@@ -78,7 +81,7 @@ if (PLATFORM_DESKTOP)
             set(SDL_TEST_ENABLED_BY_DEFAULT OFF)
             add_subdirectory(${BOREALIS_PATH}/lib/extern/SDL EXCLUDE_FROM_ALL)
         endif ()
-        list(APPEND BRLS_PLATFORM_LIBS SDL2::SDL2-static)
+        list(APPEND BRLS_PLATFORM_LIBS SDL2::SDL2-static SDL2::SDL2main)
         list(APPEND BRLS_PLATFORM_OPTION -D__SDL2__)
         list(APPEND BOREALIS_SOURCE ${BOREALIS_PATH}/lib/platforms/sdl)
         if (APPLE)
@@ -87,6 +90,9 @@ if (PLATFORM_DESKTOP)
     else ()
         if (USE_SYSTEM_GLFW)
             find_package(glfw3 REQUIRED)
+            if (APPLE)
+                list(APPEND BRLS_PLATFORM_LIBS "-framework Cocoa" "-framework IOKit" "-framework CoreFoundation")
+            endif ()
         else ()
             set(GLFW_BUILD_DOCS OFF)
             add_subdirectory(${BOREALIS_PATH}/lib/extern/glfw EXCLUDE_FROM_ALL)
@@ -157,7 +163,7 @@ elseif(PLATFORM_ANDROID)
             ${BOREALIS_PATH}/lib/platforms/desktop
             ${BOREALIS_PATH}/lib/platforms/android)
     list(APPEND BRLS_PLATFORM_LIBS SDL2 SDL2main)
-    list(APPEND BRLS_PLATFORM_OPTION -D__SDL2__ -DANDROID -DUSE_GLES2)
+    list(APPEND BRLS_PLATFORM_OPTION -D__SDL2__ -DANDROID)
 elseif(PLATFORM_IOS)
     set(BUILD_SHARED_LIBS OFF)
     add_subdirectory(${BOREALIS_PATH}/lib/extern/SDL)
@@ -166,7 +172,8 @@ elseif(PLATFORM_IOS)
             ${BOREALIS_PATH}/lib/platforms/sdl
             ${BOREALIS_PATH}/lib/platforms/desktop)
     list(APPEND BRLS_PLATFORM_LIBS SDL2-static SDL2main)
-    list(APPEND BRLS_PLATFORM_OPTION -D__SDL2__ -DIOS -DUSE_GLES3)
+    list(APPEND BRLS_PLATFORM_OPTION -D__SDL2__ -DIOS)
+    list(APPEND BOREALIS_SRC ${BOREALIS_PATH}/lib/platforms/desktop/ios_darwin.mm)
 elseif(PLATFORM_SWITCH)
     list(APPEND BOREALIS_SOURCE
             ${BOREALIS_PATH}/lib/extern/switch-libpulsar/src/archive
@@ -180,7 +187,7 @@ elseif(PLATFORM_SWITCH)
     file(GLOB_RECURSE SWITCH_PLATFORM_SRC "${BOREALIS_PATH}/lib/platforms/switch/*.cpp")
     list(APPEND BOREALIS_SRC ${SWITCH_PLATFORM_SRC})
     list(APPEND BOREALIS_INCLUDE ${BOREALIS_PATH}/lib/extern/switch-libpulsar/include)
-    list(APPEND BRLS_PLATFORM_OPTION $<$<COMPILE_LANGUAGE:CXX>:-Wno-volatile> -D__SWITCH__ -DSTBI_NO_THREAD_LOCALS)
+    list(APPEND BRLS_PLATFORM_OPTION $<$<COMPILE_LANGUAGE:CXX>:-Wno-volatile> -DHAVE_LIBNX -DSWITCH -D__SWITCH__ -DSTBI_NO_THREAD_LOCALS)
     find_package(PkgConfig REQUIRED)
 
     if (BOREALIS_USE_DEKO3D)
@@ -247,7 +254,12 @@ message(STATUS "borealis driver ${BOREALIS_DRIVER}")
 
 # borealis Library
 add_library(borealis STATIC ${BOREALIS_SRC})
-set_property(TARGET borealis PROPERTY CXX_STANDARD 17)
+set_target_properties(borealis PROPERTIES
+        CXX_STANDARD 17
+        UNITY_BUILD ${BRLS_UNITY_BUILD}
+)
+set_source_files_properties(${BOREALIS_PATH}/lib/platforms/desktop/desktop_darwin.mm PROPERTIES
+        SKIP_UNITY_BUILD_INCLUSION ON)
 target_include_directories(borealis PUBLIC ${BOREALIS_INCLUDE})
 target_link_libraries(borealis fmt tweeny yogacore ${BRLS_PLATFORM_LIBS})
 target_compile_options(borealis PUBLIC

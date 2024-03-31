@@ -62,12 +62,20 @@ enum class LogLevel
 #define BRLS_VERBOSE_COLOR "[0;37m"
 #endif
 
+#define BRLS_LOG_ERROR(format, ...) brls::Logger::error("{}:{} " format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define BRLS_LOG_WARNING(format, ...) brls::Logger::warning("{}:{} " format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define BRLS_LOG_INFO(format, ...) brls::Logger::info("{}:{} " format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define BRLS_LOG_DEBUG(format, ...) brls::Logger::debug("{}:{} " format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define BRLS_LOG_VERBOSE(format, ...) brls::Logger::verbose("{}:{} " format, __FILE__, __LINE__, ##__VA_ARGS__)
+
 class Logger
 {
   public:
     using TimePoint = std::chrono::system_clock::time_point;
 
     static void setLogLevel(LogLevel logLevel);
+
+    static LogLevel getLogLevel();
 
     static void setLogOutput(std::FILE *logOut);
 
@@ -94,7 +102,7 @@ class Logger
 #ifdef IOS
             fmt::print(logOut, "{:%H:%M:%S}.{:03d} {} {}\n", time_tm, (int)ms, color, log);
 #elif defined(ANDROID)
-            __android_log_print(6 - (int)level, "borealis", "%s\n", log.c_str());
+            __android_log_print(6 - (int)level, "borealis", "%02d:%02d:%02d.%03d %s\n", time_tm.tm_hour, time_tm.tm_min, time_tm.tm_sec, (int)ms, log.c_str());
 #elif defined(__PSV__)
             sceClibPrintf("%02d:%02d:%02d.%03d\033%s[%s]\033[0m %s\n", time_tm.tm_hour, time_tm.tm_min, time_tm.tm_sec, (int)ms, color.c_str(), prefix.c_str(), log.c_str());
 #elif defined(PS4)

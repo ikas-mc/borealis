@@ -24,6 +24,7 @@ namespace brls
 
 static ThemeValues lightThemeValues = {
     // Generic values
+    { "brls/clear", nvgRGB(235, 235, 235) },
     { "brls/background", nvgRGB(235, 235, 235) },
     { "brls/text", nvgRGB(45, 45, 45) },
     { "brls/text_disabled", nvgRGB(140, 140, 140) },
@@ -82,6 +83,7 @@ static ThemeValues lightThemeValues = {
 
 static ThemeValues darkThemeValues = {
     // Generic values
+    { "brls/clear", nvgRGB(45, 45, 45) },
     { "brls/background", nvgRGB(45, 45, 45) },
     { "brls/text", nvgRGB(255, 255, 255) },
     { "brls/text_disabled", nvgRGB(80, 80, 80) },
@@ -143,12 +145,12 @@ ThemeValues::ThemeValues(std::initializer_list<std::pair<std::string, NVGcolor>>
         this->values.insert(color);
 }
 
-void ThemeValues::addColor(std::string name, NVGcolor color)
+void ThemeValues::addColor(const std::string& name, NVGcolor color)
 {
-    this->values.insert(std::make_pair(name, color));
+        this->values[name] = color;
 }
 
-NVGcolor ThemeValues::getColor(std::string name)
+NVGcolor ThemeValues::getColor(const std::string& name)
 {
     if (this->values.count(name) == 0)
         fatal("Unknown theme value \"" + name + "\" in size: " + std::to_string(this->values.size()));
@@ -161,17 +163,17 @@ Theme::Theme(ThemeValues* values)
 {
 }
 
-NVGcolor Theme::getColor(std::string name)
+NVGcolor Theme::getColor(const std::string& name)
 {
     return this->values->getColor(name);
 }
 
-void Theme::addColor(std::string name, NVGcolor color)
+void Theme::addColor(const std::string& name, NVGcolor color)
 {
     return this->values->addColor(name, color);
 }
 
-NVGcolor Theme::operator[](std::string name)
+NVGcolor Theme::operator[](const std::string& name)
 {
     return this->getColor(name);
 }

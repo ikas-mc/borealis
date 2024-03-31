@@ -20,6 +20,11 @@ option("winrt")
     set_showmenu(true)
 option_end()
 
+option("unity_build")
+    set_default(false)
+    set_showmenu(true)
+option_end()
+
 if is_plat("windows") then
     set_languages("c++20")
     add_cxflags("/utf-8")
@@ -40,7 +45,6 @@ add_requires("yoga")
 add_requires("stb")
 add_requires("nanovg")
 add_requires("nlohmann_json")
-add_requires("glad")
 add_requires("fmt")
 add_requires("tweeny")
 
@@ -48,6 +52,10 @@ add_defines(
     'BRLS_RESOURCES="./resources/"',
     "YG_ENABLE_EVENTS"
 )
+
+if get_config("driver") == "opengl" then
+    add_requires("glad")
+end
 
 if get_config("window") == "sdl" then
     if get_config("winrt") then
@@ -94,7 +102,7 @@ target("borealis")
         add_defines("BOREALIS_USE_OPENGL")
         add_packages("glad")
     elseif driver == "d3d11" then
-        add_files("library/lib/platforms/driver/d3d11.cpp")
+        add_files("library/lib/platforms/driver/d3d11.cpp", {unity_group = "d3d11"})
         if get_config("winrt") then
             add_defines("__WINRT__=1")
         end
@@ -105,6 +113,14 @@ target("borealis")
     end
     add_packages("tinyxml2", "nlohmann_json", "nanovg", "fmt", "tweeny", "yoga", "stb")
     add_defines("BOREALIS_USE_STD_THREAD")
+    if is_plat("macosx") then
+        add_frameworks("SystemConfiguration", "CoreWlan")
+        add_files("library/lib/platforms/desktop/desktop_darwin.mm")
+    end
+    if get_config("unity_build") then
+        add_rules("c++.unity_build", {batchsize = 16})
+        add_rules("c.unity_build", {batchsize = 16})
+    end
 
 
 target("demo")
@@ -149,3 +165,7 @@ target("demo")
         end
     end
     set_rundir("$(projectdir)")
+    if get_config("unity_build") then
+        add_rules("c++.unity_build", {batchsize = 16})
+        add_rules("c.unity_build", {batchsize = 16})
+    end
