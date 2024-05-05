@@ -45,6 +45,7 @@ find_package(Threads REQUIRED)
 list(APPEND APP_PLATFORM_LIB ${CMAKE_THREAD_LIBS_INIT})
 
 # setting src and include
+list(APPEND APP_PLATFORM_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/demo/include)
 file(GLOB_RECURSE MAIN_SRC demo/*.cpp)
 
 set(PLATFORM_OPTION)
@@ -52,6 +53,9 @@ if (PLATFORM_DESKTOP)
     if (WIN32)
         configure_file("${CMAKE_SOURCE_DIR}/demo/resource.rc.in" "${CMAKE_BINARY_DIR}/resource.rc")
         list(APPEND MAIN_SRC ${CMAKE_BINARY_DIR}/resource.rc)
+        if (MINGW)
+            set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static" CACHE STRING "" FORCE)
+        endif ()
     elseif (BUNDLE_MACOS_APP)
         list(APPEND MAIN_SRC ${CMAKE_SOURCE_DIR}/demo/borealis.icns)
     endif ()

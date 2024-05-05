@@ -14,7 +14,7 @@
     limitations under the License.
 */
 
-#include "settings_tab.hpp"
+#include "tab/settings_tab.hpp"
 
 using namespace brls::literals;  // for _i18n
 
@@ -56,6 +56,10 @@ SettingsTab::SettingsTab()
 
     fps->init("FPS", brls::Application::getFPSStatus(), [](bool value){
         brls::Application::setFPSStatus(value);
+    });
+
+    alwaysOnTop->init("Always On Top", false, [](bool value){
+        brls::Application::getPlatform()->setWindowAlwaysOnTop(value);
     });
 
     selector->init("Selector", { "Test 1", "Test 2", "Test 3", "Test 4", "Test 5", "Test 6", "Test 7", "Test 8", "Test 9", "Test 10", "Test 11", "Test 12", "Test 13" }, 0, [](int selected) {

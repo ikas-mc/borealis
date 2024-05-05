@@ -2,6 +2,14 @@
 #include <borealis/core/i18n.hpp>
 #include <borealis/core/application.hpp>
 
+#ifdef __PSV__
+#define EDIT_TEXT_DIALOG_POP_ANIMATION TransitionAnimation::NONE
+#define EDIT_TEXT_DIALOG_BACKGROUND_TRANSLUCENT false
+#else
+#define EDIT_TEXT_DIALOG_POP_ANIMATION TransitionAnimation::FADE
+#define EDIT_TEXT_DIALOG_BACKGROUND_TRANSLUCENT true
+#endif
+
 namespace brls
 {
 
@@ -19,9 +27,13 @@ namespace brls
 
         <brls:Label
             id="brls/dialog/header"
-            fontSize="24"
-            marginTop="50"
-            marginBottom="30"
+            fontSize="24")xml"
+#ifdef __PSV__
+            R"xml(marginTop="30")xml"
+#else
+            R"xml(marginTop="50")xml"
+#endif
+      R"xml(marginBottom="30"
             textColor="#FFFFFF"/>
 
         <brls:Box
@@ -72,14 +84,14 @@ namespace brls
         this->registerAction(
             "hints/ok"_i18n, BUTTON_A, [this](...)
             {
-                Application::popActivity(TransitionAnimation::FADE, [this](){
+                Application::popActivity(EDIT_TEXT_DIALOG_POP_ANIMATION, [this](){
                         this->summitEvent.fire();
                     });
                 return true; });
         this->registerAction(
             "hints/ok"_i18n, BUTTON_START, [this](...)
             {
-                Application::popActivity(TransitionAnimation::FADE, [this](){
+                Application::popActivity(EDIT_TEXT_DIALOG_POP_ANIMATION, [this](){
                         this->summitEvent.fire();
                     });
                 return true; }, true);
@@ -98,7 +110,7 @@ namespace brls
         this->registerAction(
             "hints/back"_i18n, BUTTON_B, [this](...)
             {
-                Application::popActivity(TransitionAnimation::FADE, [this](){
+                Application::popActivity(EDIT_TEXT_DIALOG_POP_ANIMATION, [this](){
                         this->cancelEvent.fire();
                     });
                 return true; });
@@ -142,7 +154,7 @@ namespace brls
 
     bool EditTextDialog::isTranslucent()
     {
-        return true;
+        return EDIT_TEXT_DIALOG_BACKGROUND_TRANSLUCENT;
     }
 
     void EditTextDialog::onLayout()

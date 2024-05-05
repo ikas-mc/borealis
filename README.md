@@ -74,7 +74,6 @@ xmake b -y demo
 - install [VITASDK](https://github.com/vitasdk/vdpm)
 - install [PVR_PSP2](https://github.com/GrapheneCt/PVR_PSP2) headers and libs. refer to: [SDL/vita.yaml](https://github.com/libsdl-org/SDL/blob/5733f42c7c2cbfbbd03282919534ed30c3b07da6/.github/workflows/vita.yaml#L28-L44)
 - put `*.suprx` files ([PVR_PSP2](https://github.com/GrapheneCt/PVR_PSP2)) to `psv/module`
-- put `sce_sys` files to `psv/sce_sys`
 - Unlock unsafe mode in `System Settings/HENkaku`
 
 > We only need: `libGLESv2.suprx` `libgpu_es4_ext.suprx` `libIMGEGL.suprx` `libpvrPSP2_WSEGL.suprx`  
@@ -96,12 +95,12 @@ make -C build_psv borealis_demo.vpk -j$(nproc)
 ```shell
 make -j$(nproc) && \
 mv borealis_demo.self eboot.bin && \
-curl --ftp-method nocwd -T eboot.bin ftp://192.168.1.140:1337/ux0:/app/BOREALIS0/ && \
-echo launch BOREALIS0 | nc 192.168.1.140 1338
+curl --ftp-method nocwd -T eboot.bin ftp://192.168.1.140:1337/ux0:/app/BRLS00000/ && \
+echo launch BRLS00000 | nc 192.168.1.140 1338
 ```
 
 >  192.168.1.140 is the ip address of my psv  
->  BOREALIS0 is the demo app ID
+>  BRLS00000 is the demo app ID
 >  For me using [PSMLogUSB](https://github.com/TeamFAPS/PSVita-RE-tools/tree/master/PSMLogUSB) with [psmlogusb-client](https://github.com/isage/psmlogusb-client) is more stable than PrincessLog.
 
 ## Building the demo for PS4
@@ -162,6 +161,20 @@ open build-ios/*.xcodeproj
 
 # 3. Set up Team and Bundle Identifiers in Xcode, then connect devices to run.
 ```
+
+<details>
+
+How to install the borealis demo on your iPhone (in a beginner-friendly way):
+
+1. Download the `borealis_demo.app` (borealis-ios) from [GitHub Actions](https://github.com/xfangfang/borealis/actions).
+2. Create a new iOS project in xcode (make sure you can install the app on your iPhone).
+3. Download [ios-app-signer](https://github.com/DanTheMan827/ios-app-signer).
+4. Open `ios-app-signer`, select `borealis_demo.app` for `Input File`, select the newly created xcode project for `Provisioning Profile`, and click start.
+5. Change the suffix of the generated ipa to zip and unzip it to get the Payload folder.
+6. Open xcode, select `Window -> Devices and Simulators` from the menu bar, connect the device, click the `+` in `installed apps`, and select the `borealis_demo.app` file in the Payload folder.
+
+</details>
+
 
 ### 2. Build for arm64 iphoneOS Simulator
 

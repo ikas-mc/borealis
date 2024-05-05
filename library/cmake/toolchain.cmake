@@ -118,6 +118,11 @@ if (SIMPLE_HIGHLIGHT)
     add_definitions(-DSIMPLE_HIGHLIGHT)
 endif ()
 
+if (USE_STD_THREAD)
+    message(STATUS "Enable std thread")
+    add_definitions(-DBOREALIS_USE_STD_THREAD)
+endif ()
+
 function(program_target target source)
     if (WIN32 AND NOT WIN32_TERMINAL)
         add_executable(${target} WIN32 ${source})

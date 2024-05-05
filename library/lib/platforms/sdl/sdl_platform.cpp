@@ -51,6 +51,15 @@ SDLPlatform::SDLPlatform()
         SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
     }
     SDL_SetHint(SDL_HINT_ACCELEROMETER_AS_JOYSTICK, "0");
+#elif defined(__APPLE__)
+    // Same behavior as GLFW, change to the app's Resources directory if run in a ".app" bundle
+    // Or to the executable's directory if run from other ways
+    char *base_path = SDL_GetBasePath();
+    if (base_path)
+    {
+        chdir(base_path);
+        SDL_free(base_path);
+    }
 #endif
 
     // Init sdl
@@ -105,6 +114,11 @@ void SDLPlatform::createWindow(std::string windowTitle, uint32_t windowWidth, ui
 void SDLPlatform::restoreWindow()
 {
     SDL_RestoreWindow(this->videoContext->getSDLWindow());
+}
+
+void SDLPlatform::setWindowAlwaysOnTop(bool enable)
+{
+    SDL_SetWindowAlwaysOnTop(this->videoContext->getSDLWindow(), enable ? SDL_TRUE : SDL_FALSE);
 }
 
 void SDLPlatform::setWindowSize(uint32_t windowWidth, uint32_t windowHeight)
