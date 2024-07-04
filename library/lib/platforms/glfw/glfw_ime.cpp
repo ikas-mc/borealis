@@ -24,6 +24,7 @@ limitations under the License.
 #include <borealis/views/dialog.hpp>
 #include <borealis/views/edit_text_dialog.hpp>
 #include <borealis/views/label.hpp>
+#include <libretro-common/encodings/utf.h>
 #include <codecvt>
 #include <cstring>
 #include <iostream>
@@ -171,8 +172,12 @@ void GLFWImeManager::openInputDialog(std::function<void(std::string)> cb, std::s
     dialog->setCursor(cursor);
     dialog->setHintText(subText);
     dialog->setHeaderText(headerText);
-    dialog->setCountText("0/" + std::to_string(maxStringLength));
+    dialog->setCountText(std::to_string(utf8len(initialText.data())) + "/" + std::to_string(maxStringLength));
+ #if defined(BOREALIS_USE_D3D11)
+    float scale = Application::windowScale;
+ #else
     float scale = Application::windowScale / Application::getPlatform()->getVideoContext()->getScaleFactor();
+#endif
     dialog->getLayoutEvent()->subscribe([this, scale](Point p)
         { glfwSetPreeditCursorRectangle(window, p.x * scale, p.y * scale, 1, 1); });
 
