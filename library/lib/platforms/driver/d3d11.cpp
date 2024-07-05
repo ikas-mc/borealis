@@ -162,17 +162,19 @@ bool D3D11Context::initDX(HWND hWnd, IUnknown* coreWindow, int width, int height
     {
         Logger::error("Failed init D3D11 {:#010x}", hr);
         this->unInitDX();
-
+#ifdef __WINRT__
+#else
         char errorText[256] = { 0 };
         FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                      nullptr,
-                      hr,
-                      0,
-                      errorText,
-                      sizeof(errorText),
-                      nullptr);
+            nullptr,
+            hr,
+            0,
+            errorText,
+            sizeof(errorText),
+            nullptr);
         MessageBox(hWnd, errorText, "Init D3D11 Failed", MB_ICONERROR);
         ExitProcess(hr);
+#endif
         return false;
     }
 
