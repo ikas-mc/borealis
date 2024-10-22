@@ -144,8 +144,8 @@ namespace brls
                 {
                     SDL_StopTextInput();
                     SDL_StartTextInput();
-                    Application::setInputType(InputType::GAMEPAD);
                 }
+                Application::setInputType(InputType::GAMEPAD);
             }
         }));
         // Force to set to gamepad mode to avoid missing the `Enter` keyboard event
