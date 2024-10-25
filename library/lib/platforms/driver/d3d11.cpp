@@ -123,14 +123,17 @@ bool D3D11Context::initDX(HWND hWnd, IUnknown* coreWindow, int width, int height
         swapDesc.BufferCount        = SwapChainBufferCount;
         swapDesc.Flags              = 0;
         swapDesc.Scaling            = DXGI_SCALING_STRETCH;
+#ifdef __WINRT__
+        swapDesc.Scaling = DXGI_SCALING_NONE;
+        swapDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+#else
         if (IsWindows10OrGreater()) {
             swapDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
         } else {
             swapDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
         }
-#ifdef __WINRT__
-        swapDesc.Scaling = DXGI_SCALING_NONE;
 #endif
+
 #if WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP
         swapDesc.Scaling    = DXGI_SCALING_STRETCH;
         swapDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
