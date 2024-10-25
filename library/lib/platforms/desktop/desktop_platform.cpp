@@ -980,26 +980,26 @@ void DesktopPlatform::forceEnableGamePlayRecording()
 void DesktopPlatform::openBrowser(std::string url)
 {
     brls::Logger::debug("open url: {}", url);
-#if __SDL2__
-    SDL_OpenURL(url.c_str());
-#elif __APPLE__
-    std::string cmd = "open \"" + url + "\"";
-    system(cmd.c_str());
-#elif defined(__linux__)
-#elif __WINRT__
+#if __WINRT__
     auto rawUrl = winrt::to_hstring(url);
     winrt::Windows::Foundation::Uri uri{ rawUrl };
     if (uri.SchemeName() == winrt::to_hstring("file")) {
         //must be called from UI thread
-        auto task= winrt::Windows::System::Launcher::LaunchFolderPathAsync(rawUrl);
-        auto success= concurrency::create_task([task] {
-           return task.get();
-        }).get();
+        auto task = winrt::Windows::System::Launcher::LaunchFolderPathAsync(rawUrl);
+        auto success = concurrency::create_task([task] {
+            return task.get();
+            }).get();
         if (success) {
             return;
         }
     }
     winrt::Windows::System::Launcher::LaunchUriAsync(uri);
+#elif __SDL2__
+    SDL_OpenURL(url.c_str());
+#elif __APPLE__
+    std::string cmd = "open \"" + url + "\"";
+    system(cmd.c_str());
+#elif defined(__linux__)
     if (isSteamDeck())
     {
         runSteamDeckCommand(fmt::format("steam://openurl/{}\n", url));
