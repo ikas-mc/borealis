@@ -1,13 +1,9 @@
 ![borealis logo](https://github.com/natinusala/borealis/blob/main/resources/img/borealis_96.png?raw=true)
 # borealis
 
-Controller and TV oriented UI library for PC and Nintendo Switch (libnx).
+Controller and TV oriented UI library for PC、PS4、PSV and Nintendo Switch.
 
-⚠️ Warning: the project is a WIP - See the Projects tab to follow the journey towards a stable version!
-
-The code for the old version is available in the `legacy` branch.
-
-⚠️ The wiki only contains the documentation for the old version of the library, it has yet to be updated!
+⚠️ Warning: the project is a WIP
 
 - Mimicks the Nintendo Switch system UI, but can also be used to make anything else painlessly
 - Hardware acceleration and vector graphics with automatic scaling for TV usage (powered by nanovg)
@@ -20,6 +16,8 @@ The code for the old version is available in the `legacy` branch.
 - Display large amount of data efficiently using recycling lists
 - Integrated internationalization and storage systems
 - Integrated toolbox (logger, animations, timers, background tasks...)
+
+Check the [daily builds](https://github.com/xfangfang/borealis/actions) for what borealis looks like.
 
 ## Building the demo for Switch
 
@@ -191,9 +189,19 @@ open -a Simulator
 xcrun simctl install booted build-ios/Debug-iphonesimulator/borealis_demo.app
 ```
 
-### Including in your project (TL;DR: see the CMakeLists.txt in this repo)
-0. Your project must be built as C++17 (`-std=c++1z`). You also need to remove `-fno-rtti` and `-fno-exceptions` if you have them
-1. Use a submodule (or even better, a [subrepo](https://github.com/ingydotnet/git-subrepo)) to clone this repository in your project
-2. Copy the `resources` folder to the root of your project
+## Including in your project
 
-Here is my work with borealis: https://github.com/xfangfang/wiliwili
+1. Your project must be built as C++17 (`-std=c++1z`). You also need to remove `-fno-rtti` and `-fno-exceptions` if you have them
+2. Use a submodule (or even better, a [subrepo](https://github.com/ingydotnet/git-subrepo)) to clone this repository in your project
+3. Copy the `resources` folder to the root of your project
+
+Or you can start a new project from the [template](https://github.com/xfangfang/borealis_template)
+
+
+### Made with borealis
+
+- https://github.com/dragonflylee/switchfin
+- https://github.com/XITRIX/Moonlight-Switch
+- https://github.com/PoloNX/SimpleModDownloader
+- https://github.com/PoloNX/UpcomingSwitchGames
+- https://github.com/xfangfang/wiliwili

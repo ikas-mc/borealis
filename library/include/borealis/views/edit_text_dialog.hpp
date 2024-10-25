@@ -9,6 +9,7 @@ class EditTextDialog : public Box
 {
   public:
     EditTextDialog();
+    ~EditTextDialog() override;
     void open();
     void setText(const std::string& value);
     void setHeaderText(const std::string& value);
@@ -21,12 +22,15 @@ class EditTextDialog : public Box
     Event<>* getBackspaceEvent();
     Event<>* getCancelEvent();
     Event<>* getSubmitEvent();
+    Event<std::string>* getClipboardEvent();
     void updateUI();
   private:
     std::string content;
     std::string hint;
     Event<Point> layoutEvent;
     Event<> backspaceEvent, cancelEvent, summitEvent;
+    Event<std::string> clipboardEvent;
+    Event<KeyState>::Subscription keyEvent;
     bool init = false;
 
     BRLS_BIND(brls::Label, header, "brls/dialog/header");

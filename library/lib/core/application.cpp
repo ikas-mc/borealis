@@ -78,6 +78,7 @@ bool Application::init()
 
     // Init platform
     Application::platform = Platform::createPlatform();
+    Application::notificationManager = new NotificationManager();
 
     if (!Application::platform)
     {
@@ -155,6 +156,8 @@ void Application::createWindow(std::string windowTitle)
     Application::registerBuiltInXMLViews();
 
     Application::getWindowCreationDoneEvent()->fire();
+
+    Application::backgroundColor = Application::getTheme().getColor("brls/clear");
 }
 
 bool Application::mainLoop()
@@ -375,8 +378,6 @@ void Application::processInput()
     // Trigger controller events
     bool repeating                  = false;
     Time cpuTime = getCPUTimeUsec();
-
-    controllerState.buttons[BUTTON_B] |= inputManager->getKeyboardKeyState(BRLS_KBD_KEY_ESCAPE);
 
     for (int i = 0; i < _BUTTON_MAX; i++)
     {
@@ -654,7 +655,6 @@ void Application::frame()
     frameContext.theme      = Application::getTheme();
 
     // Begin frame and clear
-    NVGcolor backgroundColor = frameContext.theme["brls/clear"];
     videoContext->beginFrame();
     videoContext->clear(backgroundColor);
     float scaleFactor = videoContext->getScaleFactor();
@@ -688,6 +688,9 @@ void Application::frame()
     {
         currentFocus->frameHighlight(&frameContext);
     }
+
+    // Notifications
+    Application::notificationManager->frame(&frameContext);
 
     if (isDrawCursor())
     {
@@ -727,6 +730,7 @@ void Application::exit()
 
     exitDoneEvent.fire();
 
+    delete Application::notificationManager;
     delete Application::platform;
 }
 
@@ -764,9 +768,9 @@ void Application::setLimitedFPS(size_t fps)
     Application::limitedFrameTime = fps == 0 ? 0 : 1000000.0f / fps;
 }
 
-void Application::notify(std::string text)
+void Application::notify(const std::string& text)
 {
-    // To be implemented
+    Application::notificationManager->notify(text);
 }
 
 void Application::giveFocus(View* view)
@@ -948,7 +952,7 @@ void Application::addToFreeQueue(View* view)
 {
     if (std::binary_search(deletionPool.cbegin(), deletionPool.cend(), view))
         return;
-    
+
     brls::Logger::verbose("Application::addToFreeQueue {}", view->describe());
 
     Application::deletionPool.push_back(view);
@@ -1077,12 +1081,14 @@ void Application::onWindowResized(int width, int height)
     brls::cancelDelay(iter);
     iter = brls::delay(100, [width, height]()
         {
-            Logger::info("Window size changed to {}x{}, content size: {}x{} factor: {}",
-                width, height, contentWidth, contentHeight, Application::windowScale);
-            brls::Logger::info("scale factor: {}", Application::getPlatform()->getVideoContext()->getScaleFactor());
-
             Application::setWindowSize(width, height);
-            Application::getWindowSizeChangedEvent()->fire(); });
+            Application::getWindowSizeChangedEvent()->fire();
+
+            Logger::info("Window size changed to {}x{}, content size: {}x{} windowScale: {}",
+                width, height, contentWidth, contentHeight, Application::windowScale);
+            brls::Logger::info("scale factor: {}",
+                Application::getPlatform()->getVideoContext()->getScaleFactor());
+        });
 }
 
 void Application::setWindowPosition(int x, int y)

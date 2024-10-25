@@ -35,7 +35,7 @@
 #include <shellapi.h>
 #include <winioctl.h>
 #include <ntddvdeo.h>
-#elif IOS
+#elif IOS || TVOS
 #elif __APPLE__
 #include <IOKit/ps/IOPSKeys.h>
 #include <IOKit/ps/IOPowerSources.h>
@@ -70,6 +70,7 @@ const static auto timeout = std::chrono::milliseconds(500);
 
 int winrt_wlan_quality()
 {
+
     //wait_for can't run in ui thread
     //TODO  caller refactor or other @ikas
     return  concurrency::create_task([&] {
@@ -77,13 +78,16 @@ int winrt_wlan_quality()
         auto code = async.wait_for(timeout);
         if (code == winrt::Windows::Foundation::AsyncStatus::Completed)
         {
+
             auto adapters = async.GetResults();
             for (auto it : adapters)
             {
+
                 auto profileAsync = it.NetworkAdapter().GetConnectedProfileAsync();
                 auto profileCode = profileAsync.wait_for(timeout);
                 if (profileCode == winrt::Windows::Foundation::AsyncStatus::Completed)
                 {
+                 
                     auto profile = profileAsync.GetResults();
                     if (profile != nullptr && profile.IsWlanConnectionProfile())
                     {
@@ -92,6 +96,7 @@ int winrt_wlan_quality()
                 }
             }
         }
+
         return -1; // No WiFi Adapter found.
     }).get();
 }
@@ -138,7 +143,8 @@ int win32_wlan_quality()
     }
     return quality;
 }
-#elif IOS
+
+#elif IOS || TVOS
 extern ThemeVariant ios_theme();
 extern uint8_t ios_battery_status();
 extern float ios_battery();
@@ -190,7 +196,8 @@ int darwin_get_powerstate()
     return capacity;
 }
 #elif ANDROID
-#elif __linux__
+
+#elif defined(__linux__)
 // Thanks to: https://github.com/videolan/vlc/blob/master/modules/misc/inhibit/dbus.c
 enum INHIBIT_TYPE
 {
@@ -198,6 +205,7 @@ enum INHIBIT_TYPE
     FDO_PM, /**< KDE and GNOME <= 2.26 and Xfce */
     MATE, /**< >= 1.0 */
     GNOME, /**< GNOME 2.26..3.4 */
+    NONE,
 };
 
 static const char dbus_service[][40] = {
@@ -230,44 +238,25 @@ static const char dbus_method_uninhibit[][10] = {
 
 static const char dbus_method_inhibit[] = "Inhibit";
 
-static inline INHIBIT_TYPE detectLinuxDesktopEnvironment()
+
+static INHIBIT_TYPE systemType = NONE;
+
+static inline void probeInhibitor(DBusConnection* conn)
 {
-    const char* currentDesktop = getenv("XDG_CURRENT_DESKTOP");
-    if (currentDesktop)
+
+    for (int i = FDO_SS; i < NONE; ++i)
     {
-        std::string xdgCurrentDesktop { currentDesktop };
-        // to upper
-        for (auto& i : xdgCurrentDesktop)
-        {
-            if ('a' <= i && i <= 'z')
-            {
-                i -= 32;
-            }
+
+        if (dbus_bus_name_has_owner(conn, dbus_service[i], NULL))
+
+            Logger::info("Found inhibitor service: {}", dbus_service[i]);
+            systemType = static_cast<INHIBIT_TYPE>(i);
+            return;
         }
-        Logger::info("XDG_CURRENT_DESKTOP: {}", xdgCurrentDesktop);
-        if (xdgCurrentDesktop == "GNOME")
-            return GNOME;
-        if (xdgCurrentDesktop == "UBUNTU:GNOME")
-            return GNOME;
-        if (xdgCurrentDesktop == "MATE")
-            return MATE;
-    }
-    if (getenv("GNOME_DESKTOP_SESSION_ID"))
-    {
-        Logger::info("CURRENT_DESKTOP: GNOME");
-        return GNOME;
-    }
-    const char* kdeVersion = getenv("KDE_SESSION_VERSION");
-    if (kdeVersion && atoi(kdeVersion) >= 4)
-    {
-        Logger::info("CURRENT_DESKTOP: KDE {}", kdeVersion);
-        return FDO_SS;
-    }
-    Logger::info("CURRENT_DESKTOP: DEFAULT");
-    return FDO_PM;
+
+    Logger::error("Failed to find an inhibitor service");
 }
 
-static INHIBIT_TYPE systemType = detectLinuxDesktopEnvironment();
 
 static DBusConnection* connectSessionBus()
 {
@@ -296,6 +285,11 @@ void closeSessionBus(DBusConnection* bus)
 
 uint32_t dbusInhibit(DBusConnection* connection, const std::string& app, const std::string& reason)
 {
+    if (systemType == NONE) {
+        Logger::error("Idle inhibitor not available");
+        return 0;
+    }
+
     DBusMessage* msg = dbus_message_new_method_call(dbus_service[systemType],
         dbus_path[systemType],
         dbus_interface[systemType],
@@ -361,6 +355,11 @@ uint32_t dbusInhibit(DBusConnection* connection, const std::string& app, const s
 
 void dbusUnInhibit(DBusConnection* connection, uint32_t cookie)
 {
+    if (systemType == NONE) {
+        Logger::error("Idle inhibitor not available");
+        return;
+    }
+
     DBusMessage* msg = dbus_message_new_method_call(dbus_service[systemType],
         dbus_path[systemType],
         dbus_interface[systemType],
@@ -400,7 +399,8 @@ DesktopPlatform::DesktopPlatform()
     char* themeEnv = getenv("BOREALIS_THEME");
     if (themeEnv == nullptr)
     {
-#if defined(IOS)
+
+#if defined(IOS) || defined(TVOS)
         this->themeVariant = ios_theme();
 #elif __APPLE__
         CFPropertyListRef propertyList = CFPreferencesCopyValue(
@@ -464,11 +464,16 @@ DesktopPlatform::DesktopPlatform()
     // Platform impls
     this->fontLoader = new DesktopFontLoader();
     this->imeManager = new DesktopImeManager();
+
+#if defined(__linux__) && !defined(ANDROID)
+    probeInhibitor(dbus_conn.get());
+#endif
 }
 
 bool DesktopPlatform::canShowBatteryLevel()
 {
-#if defined(IOS)
+
+#if defined(IOS) || defined(TVOS)
     return ios_battery_status() != 0;
 #elif defined(__APPLE__)
     return darwin_get_powerstate() >= 0;
@@ -484,7 +489,9 @@ bool DesktopPlatform::canShowBatteryLevel()
 
 bool DesktopPlatform::canShowWirelessLevel()
 {
-#if defined(IOS)
+
+#if defined(IOS) || defined(TVOS)
+    return false;
 #elif defined(__APPLE__)
     return true;
 #elif defined(_WIN32)
@@ -496,7 +503,8 @@ bool DesktopPlatform::canShowWirelessLevel()
 
 int DesktopPlatform::getBatteryLevel()
 {
-#if defined(IOS)
+
+#if defined(IOS) || defined(TVOS)
     return ios_battery() * 100;
 #elif defined(__APPLE__)
     return darwin_get_powerstate() & 0x7F;
@@ -512,7 +520,8 @@ int DesktopPlatform::getBatteryLevel()
 
 bool DesktopPlatform::isBatteryCharging()
 {
-#if defined(IOS)
+
+#if defined(IOS) || defined(TVOS)
     return ios_battery_status() == 2;
 #elif defined(__APPLE__)
     return darwin_get_powerstate() & 0x80;
@@ -528,7 +537,9 @@ bool DesktopPlatform::isBatteryCharging()
 
 bool DesktopPlatform::hasWirelessConnection()
 {
-#if defined(IOS)
+
+#if defined(IOS) || defined(TVOS)
+    return false;
 #elif defined(__APPLE__)
     return darwin_wlan_quality() > 0;
 #elif defined(__WINRT__)
@@ -542,7 +553,9 @@ bool DesktopPlatform::hasWirelessConnection()
 
 int DesktopPlatform::getWirelessLevel()
 {
-#if defined(IOS)
+
+#if defined(IOS) || defined(TVOS)
+    return 0;
 #elif defined(__APPLE__)
     return darwin_wlan_quality();
 #elif defined(__WINRT__)
@@ -559,7 +572,8 @@ int DesktopPlatform::getWirelessLevel()
 bool DesktopPlatform::hasEthernetConnection()
 {
     bool has_eth = false;
-#if defined(IOS)
+
+#if defined(IOS) || defined(TVOS)
 #elif defined(__APPLE__)
     SCDynamicStoreRef storeRef = SCDynamicStoreCreate(nullptr, CFSTR("FindCurrentInterface"), nullptr, nullptr);
     CFDictionaryRef globalRef  = (CFDictionaryRef)SCDynamicStoreCopyValue(storeRef, CFSTR("State:/Network/Global/IPv4"));
@@ -639,7 +653,8 @@ void DesktopPlatform::disableScreenDimming(bool disable, const std::string& reas
     if (disable)
     {
 #ifdef ANDROID
-#elif defined(IOS)
+
+#elif defined(IOS) || defined(TVOS)
 #elif defined(__linux__)
         inhibitCookie = dbusInhibit(dbus_conn.get(), app, reason);
 #elif __APPLE__
@@ -666,7 +681,8 @@ void DesktopPlatform::disableScreenDimming(bool disable, const std::string& reas
     else
     {
 #ifdef ANDROID
-#elif defined(IOS)
+
+#elif defined(IOS) || defined(TVOS)
 #elif defined(__linux__)
         if (inhibitCookie != 0)
             dbusUnInhibit(dbus_conn.get(), inhibitCookie);
@@ -765,7 +781,8 @@ std::string DesktopPlatform::getIpAddress()
 {
     std::string ipaddr = "-";
 #if defined(ANDROID)
-#elif defined(IOS)
+
+#elif defined(IOS) || defined(TVOS)
 #elif defined(__APPLE__) || defined(__linux__)
     struct ifaddrs* interfaces = nullptr;
     if (getifaddrs(&interfaces) == 0)
@@ -826,7 +843,8 @@ std::string DesktopPlatform::getIpAddress()
 std::string DesktopPlatform::getDnsServer()
 {
     std::string dnssvr = "-";
-#if defined(IOS)
+
+#if defined(IOS) || defined(TVOS)
 #elif defined(__APPLE__)
     SCPreferencesRef prefsDNS = SCPreferencesCreate(nullptr, CFSTR("DNSSETTING"), nullptr);
     CFArrayRef services       = SCNetworkServiceCopyAll(prefsDNS);
@@ -898,7 +916,8 @@ std::string DesktopPlatform::exec(const char* cmd)
 {
     std::stringstream ss;
 #if defined(ANDROID)
-#elif defined(IOS)
+
+#elif defined(IOS) || defined(TVOS)
 #elif defined(__APPLE__) || defined(__linux__)
     FILE* pipe = popen(cmd, "r");
     if (!pipe)
@@ -966,7 +985,7 @@ void DesktopPlatform::openBrowser(std::string url)
 #elif __APPLE__
     std::string cmd = "open \"" + url + "\"";
     system(cmd.c_str());
-#elif __linux__
+#elif defined(__linux__)
 #elif __WINRT__
     auto rawUrl = winrt::to_hstring(url);
     winrt::Windows::Foundation::Uri uri{ rawUrl };

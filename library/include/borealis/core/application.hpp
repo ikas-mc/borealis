@@ -30,6 +30,7 @@
 #include <borealis/core/style.hpp>
 #include <borealis/core/theme.hpp>
 #include <borealis/core/view.hpp>
+#include <borealis/core/notification_manager.hpp>
 #include <borealis/views/label.hpp>
 #include <deque>
 #include <vector>
@@ -52,12 +53,14 @@ enum class InputType
 };
 
 class DebugLayer;
+class EditTextDialog;
 
 typedef std::function<View*(void)> XMLViewCreator;
 
 class Application
 {
   public:
+    friend class EditTextDialog;
 
     static inline uint32_t ORIGINAL_WINDOW_WIDTH  = 1280;
     static inline uint32_t ORIGINAL_WINDOW_HEIGHT = 720;
@@ -171,7 +174,7 @@ class Application
 
     static int getDefaultFont();
 
-    static void notify(std::string text);
+    static void notify(const std::string& text);
 
     static void onControllerButtonPressed(enum ControllerButton button, bool repeating);
 
@@ -318,6 +321,7 @@ class Application
     inline static View* currentFocus = nullptr;
     inline static std::vector<TouchState> currentTouchState;
     inline static MouseState currentMouseState;
+    inline static NotificationManager* notificationManager;
 
     // Return true if input type was changed
     static bool setInputType(InputType type);
@@ -333,6 +337,7 @@ class Application
     inline static bool muteSounds            = false;
 
     inline static std::string commonFooter;
+    inline static NVGcolor backgroundColor{};
 
     inline static bool globalQuitEnabled                = false;
     inline static ActionIdentifier gloablQuitIdentifier = ACTION_NONE;
