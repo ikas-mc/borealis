@@ -13,6 +13,14 @@
 #define EDIT_TEXT_DIALOG_BACKGROUND_TRANSLUCENT true
 #endif
 
+#ifdef __WINRT__
+#include <winrt/Windows.ApplicationModel.DataTransfer.h>
+#include <winrt/Windows.Foundation.h>
+#include <ppltasks.h>
+using namespace winrt;
+using namespace Windows::ApplicationModel::DataTransfer;
+using namespace Windows::Foundation;
+#endif
 namespace brls
 {
 
@@ -113,7 +121,19 @@ namespace brls
 #else
                     if (state.mods & BRLS_KBD_MODIFIER_CTRL) {
 #endif
+#ifdef __WINRT__
+                        DataPackageView dataPackageView = Clipboard::GetContent();
+                        if (dataPackageView.Contains(StandardDataFormats::Text()))
+                        {
+                            winrt::hstring text = concurrency::create_task([dataPackageView] {
+                                return dataPackageView.GetTextAsync().get();
+                                }).get();
+                            this->clipboardEvent.fire(winrt::to_string(text));
+                        }
+#else
+
                         this->clipboardEvent.fire(Application::getPlatform()->pasteFromClipboard());
+#endif            
                     }
                     break;
                 default:
