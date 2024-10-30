@@ -134,10 +134,6 @@ bool D3D11Context::initDX(HWND hWnd, IUnknown* coreWindow, int width, int height
         }
 #endif
 
-#if WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP
-        swapDesc.Scaling    = DXGI_SCALING_STRETCH;
-        swapDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-#endif
         // this->sd.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
         if (coreWindow)
         {
