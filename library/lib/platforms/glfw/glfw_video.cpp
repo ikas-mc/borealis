@@ -20,9 +20,6 @@
 
 // nanovg implementation
 #ifdef BOREALIS_USE_OPENGL
-#ifdef __PSV__
-#define NANOVG_GLES2_IMPLEMENTATION
-#else
 #include <glad/glad.h>
 #ifdef USE_GL2
 #define NANOVG_GL2_IMPLEMENTATION
@@ -33,7 +30,6 @@
 #else
 #define NANOVG_GL3_IMPLEMENTATION
 #endif /* USE_GL2 */
-#endif /* __PSV__ */
 #include <nanovg_gl.h>
 #elif defined(BOREALIS_USE_METAL)
 static void* METAL_CONTEXT = nullptr;
@@ -220,7 +216,7 @@ GLFWVideoContext::GLFWVideoContext(const std::string& windowTitle, uint32_t wind
 #if defined(__APPLE__) || defined(__linux__) || defined(_WIN32)
     // If the window appears outside the screen, using the default settings
     GLFWmonitor* monitor = nullptr;
-    if (!isnan(windowX) && !isnan(windowY))
+    if (!std::isnan(windowX) && !std::isnan(windowY))
         monitor = getAvailableMonitor(VideoContext::monitorIndex, (int)windowX, (int)windowY, (int)windowWidth, (int)windowHeight);
 
     if (monitor == nullptr)
@@ -294,7 +290,7 @@ GLFWVideoContext::GLFWVideoContext(const std::string& windowTitle, uint32_t wind
     {
         if (mode->width >= (int)windowWidth && mode->height >= (int)windowHeight)
         {
-            if (!isnan(windowX) && !isnan(windowY))
+            if (!std::isnan(windowX) && !std::isnan(windowY))
             {
                 glfwSetWindowPos(this->window, (int)windowX, (int)windowY);
             }
@@ -333,11 +329,8 @@ GLFWVideoContext::GLFWVideoContext(const std::string& windowTitle, uint32_t wind
 
 #ifdef BOREALIS_USE_OPENGL
     glfwMakeContextCurrent(window);
-#ifndef __PSV__
     // Load OpenGL routines using glad
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-#endif
-    glfwSwapInterval(1);
 
     Logger::info("glfw: GL Vendor: {}", (const char*)glGetString(GL_VENDOR));
     Logger::info("glfw: GL Renderer: {}", (const char*)glGetString(GL_RENDERER));
@@ -374,6 +367,8 @@ GLFWVideoContext::GLFWVideoContext(const std::string& windowTitle, uint32_t wind
         glfwTerminate();
         return;
     }
+
+    setSwapInterval(VideoContext::swapInterval);
 
     // Setup window state
     int width, height;
@@ -435,6 +430,17 @@ void GLFWVideoContext::endFrame()
     D3D11_CONTEXT->endFrame();
 #endif
 }
+
+void GLFWVideoContext::setSwapInterval(int interval)
+{
+    VideoContext::swapInterval = interval;
+#ifdef BOREALIS_USE_D3D11
+    D3D11_CONTEXT->setSwapInterval(interval);
+#else
+    glfwSwapInterval(interval);
+#endif
+}
+
 
 void GLFWVideoContext::clear(NVGcolor color)
 {
@@ -576,7 +582,7 @@ void GLFWVideoContext::fullScreen(bool fs)
         }
     }
 #ifdef BOREALIS_USE_OPENGL
-    glfwSwapInterval(1);
+    glfwSwapInterval(VideoContext::swapInterval);
 #endif
 }
 

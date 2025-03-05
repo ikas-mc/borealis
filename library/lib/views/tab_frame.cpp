@@ -16,6 +16,7 @@
     limitations under the License.
 */
 
+#include <tinyxml2.h>
 #include <borealis/core/application.hpp>
 #include <borealis/core/i18n.hpp>
 #include <borealis/core/logger.hpp>

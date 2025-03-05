@@ -345,7 +345,7 @@ static const size_t SDL_AXIS_MAPPING[SDL_GAMEPAD_AXIS_MAX] = {
     RIGHT_Z,
 };
 
-std::unordered_map<SDL_JoystickID, SDL_GameController*> controllers;
+std::vector<std::pair<SDL_JoystickID, SDL_GameController*>> controllers;
 
 static int mouseButtons[3] = { 0 };
 
@@ -388,13 +388,16 @@ static int sdlEventWatcher(void* data, SDL_Event* event)
         {
             SDL_JoystickID jid = SDL_JoystickGetDeviceInstanceID(event->cdevice.which);
             Logger::info("Controller connected: {}/{}", jid, SDL_GameControllerName(controller));
-            controllers.insert({ jid, controller });
+            controllers.push_back({ jid, controller });
         }
     }
     else if (event->type == SDL_CONTROLLERDEVICEREMOVED)
     {
         Logger::info("Controller disconnected: {}", event->cdevice.which);
-        controllers.erase(event->cdevice.which);
+        SDL_JoystickID jid = SDL_JoystickGetDeviceInstanceID(event->cdevice.which);
+        controllers.erase(std::remove_if(controllers.begin(), controllers.end(), [jid](auto x) {
+            return x.first == jid;
+        }), controllers.end());
     }
     else if (event->type == SDL_MOUSEBUTTONDOWN)
     {
@@ -436,7 +439,7 @@ SDLInputManager::SDLInputManager(SDL_Window* window)
     {
         SDL_JoystickID jid = SDL_JoystickGetDeviceInstanceID(i);
         Logger::info("sdl: joystick {}: \"{}\"", jid, SDL_JoystickNameForIndex(i));
-        controllers.insert({ jid, SDL_GameControllerOpen(i) });
+        controllers.push_back({ jid, SDL_GameControllerOpen(i) });
     }
 
     SDL_AddEventWatch(sdlEventWatcher, this->window);
@@ -526,9 +529,9 @@ void SDLInputManager::updateUnifiedControllerState(ControllerState* state)
 
 void SDLInputManager::updateControllerState(ControllerState* state, int controller)
 {
-    if (controllers.find(controller) == controllers.end())
-        return;
-    SDL_GameController* c = controllers[controller];
+    if (controllers.size() <= controller) return;
+
+    SDL_GameController* c = controllers[controller].second;
 
     for (size_t i = 0; i < SDL_GAMEPAD_BUTTON_MAX; i++)
     {
@@ -619,9 +622,8 @@ void SDLInputManager::runloopStart()
 
 void SDLInputManager::sendRumble(unsigned short controller, unsigned short lowFreqMotor, unsigned short highFreqMotor)
 {
-    if (controllers.find(controller) == controllers.end())
-        return;
-    SDL_GameController* c = controllers[controller];
+    if (controllers.size() <= controller) return;
+    SDL_GameController* c = controllers[controller].second;
 
     SDL_GameControllerRumble(c, lowFreqMotor, highFreqMotor, 30000);
 }

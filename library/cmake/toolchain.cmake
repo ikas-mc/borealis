@@ -14,6 +14,9 @@ if (PLATFORM_DESKTOP)
     message(STATUS "building for Desktop")
     set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -g2 -ggdb -Wall")
     set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
+    if (NOT USE_GLFW AND NOT SDL2)
+        set(USE_GLFW ON)
+    endif ()
 elseif (PLATFORM_IOS OR PLATFORM_TVOS)
     if(PLATFORM_IOS)
         message(STATUS "building for iOS")
@@ -48,9 +51,12 @@ elseif(PLATFORM_ANDROID)
     check_libromfs_generator()
 elseif(PLATFORM_PSV)
     message(STATUS "building for PSVita")
-    set(USE_SDL2 ON)
+    set(USE_SDL2 OFF)
     set(USE_GLFW OFF)
-    set(USE_GLES2 ON)
+    if (NOT USE_GXM)
+        set(USE_GLES2 ON)
+        set(USE_SDL2 ON)
+    endif ()
     if (NOT DEFINED ENV{VITASDK})
         message(FATAL_ERROR "Please define VITASDK to point to your SDK path!")
     endif ()
@@ -58,8 +64,7 @@ elseif(PLATFORM_PSV)
     set(VITASDK $ENV{VITASDK} CACHE BOOL "VITASDK")
     include("${VITASDK}/share/vita.cmake" REQUIRED)
     add_definitions(-D__psp2__ -D__PSV__)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error=pedantic -Wno-psabi")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=pedantic -Wno-psabi")
+    add_compile_options(-Wno-error=pedantic -Wno-psabi)
 elseif(PLATFORM_PS4)
     message(STATUS "building for PS4")
     set(USE_SDL2 ON)
@@ -81,6 +86,9 @@ elseif (PLATFORM_SWITCH)
     set(CMAKE_C_FLAGS "-I${DEVKITPRO}/libnx/include -I${DEVKITPRO}/portlibs/switch/include")
     set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS}")
     include(${DEVKITPRO}/cmake/Switch.cmake REQUIRED)
+    if (NOT USE_GLFW AND NOT SDL2)
+        set(USE_GLFW ON)
+    endif ()
 else()
     message(FATAL_ERROR "Please set build target. Example: -DPLATFORM_DESKTOP=ON or -DPLATFORM_SWITCH=ON")
 endif ()
@@ -92,6 +100,9 @@ if (USE_DEKO3D)
 elseif (USE_D3D11)
     message(STATUS "USE_D3D11")
     set(BOREALIS_USE_D3D11 ON)
+elseif (USE_GXM)
+    message(STATUS "USE_GXM")
+    set(BOREALIS_USE_GXM ON)
 elseif (USE_METAL)
     message(STATUS "USE_METAL")
     set(BOREALIS_USE_METAL ON)
@@ -114,11 +125,13 @@ if (USE_SDL2)
     set(USE_SDL2 ON)
     set(USE_GLFW OFF)
     add_definitions(-D__SDL2__)
-else ()
+elseif (USE_GLFW)
     message(STATUS "GLFW")
     set(USE_SDL2 OFF)
     set(USE_GLFW ON)
     add_definitions(-D__GLFW__)
+else ()
+    message(STATUS "SDL2 AND GLFW is both disabled, make sure this is what you want")
 endif ()
 
 if (SIMPLE_HIGHLIGHT)
@@ -190,26 +203,30 @@ function(linux_install res res_install svg_icon icon_res_dir icon_res_list appda
     # bin
     install(TARGETS ${PROJECT_NAME}
             DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+    if (NOT DEFINED CMAKE_INSTALL_SHARE_DIR)
+        set(CMAKE_INSTALL_SHARE_DIR ${CMAKE_INSTALL_PREFIX}/share)
+    endif ()
     # resources
     install(DIRECTORY ${res}
             DESTINATION ${res_install}
             FILE_PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
     # svg icon
     install(FILES ${svg_icon}
-            DESTINATION ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/scalable/apps
+            DESTINATION ${CMAKE_INSTALL_SHARE_DIR}/icons/hicolor/scalable/apps
             PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
     # png icon
     foreach (icon_dir ${icon_res_list})
         install(FILES ${icon_res_dir}/${icon_dir}/${PACKAGE_NAME}.png
-                DESTINATION ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/${icon_dir}/apps
+                DESTINATION ${CMAKE_INSTALL_SHARE_DIR}/icons/hicolor/${icon_dir}/apps
                 PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
     endforeach ()
     # appdata
     install(FILES ${appdata}
-            DESTINATION ${CMAKE_INSTALL_PREFIX}/share/metainfo
+            DESTINATION ${CMAKE_INSTALL_SHARE_DIR}/metainfo
             PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
     # desktop
-    install(FILES ${desktop} DESTINATION ${CMAKE_INSTALL_PREFIX}/share/applications)
+    configure_file("${desktop}" "${CMAKE_BINARY_DIR}/${PACKAGE_NAME}.desktop")
+    install(FILES "${CMAKE_BINARY_DIR}/${PACKAGE_NAME}.desktop" DESTINATION ${CMAKE_INSTALL_SHARE_DIR}/applications)
 endfunction()
 
 function(add_libromfs app res)

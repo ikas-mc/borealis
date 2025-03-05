@@ -16,6 +16,8 @@
     limitations under the License.
 */
 
+#include <yoga/YGNode.h>
+
 #include <borealis/core/application.hpp>
 #include <borealis/core/util.hpp>
 #include <borealis/views/image.hpp>

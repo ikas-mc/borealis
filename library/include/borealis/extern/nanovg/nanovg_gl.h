@@ -1099,13 +1099,7 @@ static void glnvg__convexFillStencil(GLNVGcontext* gl, GLNVGcall* call)
 	glnvg__convexFill(gl, call);
 
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-	#ifdef PS4
-		// todo: update ps4 shader
-		// I'm currently unable to update the ps4 prebuilt shader, so just keep it as before
-		glnvg__stencilFunc(gl, GL_EQUAL, 1, 0xFF);
-	#else
-		glnvg__stencilFunc(gl, GL_EQUAL, 0, 0xFF);
-	#endif
+    glnvg__stencilFunc(gl, GL_EQUAL, 0, 0xFF);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 }
 

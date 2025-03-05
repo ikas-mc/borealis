@@ -237,7 +237,7 @@ SDLVideoContext::SDLVideoContext(std::string windowTitle, uint32_t windowWidth, 
     }
     SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
 
-    if (isnan(windowXPos) || isnan(windowYPos))
+    if (std::isnan(windowXPos) || std::isnan(windowYPos))
     {
         this->window = SDL_CreateWindow(windowTitle.c_str(),
             SDL_WINDOWPOS_UNDEFINED,
@@ -271,7 +271,6 @@ SDLVideoContext::SDLVideoContext(std::string windowTitle, uint32_t windowWidth, 
     // Load OpenGL routines using glad
     gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress);
 #endif
-    SDL_GL_SetSwapInterval(1);
 
     Logger::info("sdl: GL Vendor: {}", (const char*)glGetString(GL_VENDOR));
     Logger::info("sdl: GL Renderer: {}", (const char*)glGetString(GL_RENDERER));
@@ -299,6 +298,8 @@ SDLVideoContext::SDLVideoContext(std::string windowTitle, uint32_t windowWidth, 
     {
         brls::fatal("sdl: unable to init nanovg");
     }
+
+    setSwapInterval(VideoContext::swapInterval);
 
     // Setup window state
     int width, height;
@@ -344,6 +345,16 @@ void SDLVideoContext::endFrame()
     SDL_GL_SwapWindow(this->window);
 #elif defined(BOREALIS_USE_D3D11)
     D3D11_CONTEXT->endFrame();
+#endif
+}
+
+void SDLVideoContext::setSwapInterval(int interval)
+{
+    VideoContext::swapInterval = interval;
+#ifdef BOREALIS_USE_OPENGL
+    SDL_GL_SetSwapInterval(interval);
+#elif defined(BOREALIS_USE_D3D11)
+    D3D11_CONTEXT->setSwapInterval(interval);
 #endif
 }
 

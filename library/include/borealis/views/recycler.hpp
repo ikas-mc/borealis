@@ -264,6 +264,7 @@ class RecyclerFrame : public ScrollingFrame
     void queueReusableCell(RecyclerCell* cell);
 
     void addCellAt(size_t index, size_t downSide);
+    void removeCell(View* view);
 };
 
 } // namespace brls

@@ -146,6 +146,10 @@ void fonsDrawDebug(FONScontext* s, float x, float y);
 
 #define FONS_NOTUSED(v)  (void)sizeof(v)
 
+#ifdef __PSV__
+#include <psp2/io/fcntl.h>
+#endif
+
 #ifdef FONS_USE_FREETYPE
 
 #include <ft2build.h>
@@ -923,6 +927,31 @@ error:
 
 int fonsAddFont(FONScontext* stash, const char* name, const char* path, int fontIndex)
 {
+#ifdef __PSV__
+    SceUID fp = 0;
+    long dataSize = 0;
+    SceSSize readed;
+    unsigned char* data = NULL;
+
+    // Read in the font data.
+    fp = sceIoOpen(path, SCE_O_RDONLY, 0777);
+    if (fp == 0) goto error;
+    dataSize = sceIoLseek32(fp, 0, SCE_SEEK_END);
+    sceIoLseek32(fp, 0, SCE_SEEK_SET);
+    data = (unsigned char*)malloc(dataSize);
+    if (data == NULL) goto error;
+    readed = sceIoRead(fp, data, dataSize);
+    sceIoClose(fp);
+    fp = 0;
+    if (readed != (size_t)dataSize) goto error;
+
+    return fonsAddFontMem(stash, name, data, dataSize, 1, fontIndex);
+
+    error:
+    if (data) free(data);
+    if (fp) sceIoClose(fp);
+    return FONS_INVALID;
+#else
 	FILE* fp = 0;
 	int dataSize = 0;
 	size_t readed;
@@ -947,6 +976,7 @@ error:
 	if (data) free(data);
 	if (fp) fclose(fp);
 	return FONS_INVALID;
+#endif
 }
 
 int fonsAddFontMem(FONScontext* stash, const char* name, unsigned char* data, int dataSize, int freeData, int fontIndex)

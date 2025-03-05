@@ -1,23 +1,21 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 MAINTAINER xfangfang <xfangfang@126.com>
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends ca-certificates curl wget git patch cmake make pkg-config zstd libarchive-tools libgpgme11  && \
+    apt-get install -y --no-install-recommends ca-certificates curl wget git patch cmake make pkg-config zstd libarchive-tools libgpgme11 pacman-package-manager && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.0g-2ubuntu4_amd64.deb && \
-    wget https://github.com/PacBrew/pacbrew-pacman/releases/download/v1.1/pacbrew-pacman-1.1.deb && \
-    dpkg -i *.deb && \
-    rm *.deb
-
-RUN ln -s /proc/mounts /etc/mtab && \
-    pacbrew-pacman -Sy --noconfirm && \
-    pacbrew-pacman -S --noconfirm ps4-openorbis ps4-openorbis-sdl2 ps4-openorbis-libsamplerate && \
-    yes | pacbrew-pacman -Scc && \
+RUN echo "[pacbrew]" >> /etc/pacman.conf && \
+    echo "SigLevel = Optional TrustAll" >> /etc/pacman.conf && \
+    echo "Server = https://pacman.mydedibox.fr/pacbrew/packages/" >> /etc/pacman.conf && \
+    ln -s /proc/mounts /etc/mtab && \
+    pacman -Sy --noconfirm && \
+    pacman -S --noconfirm ps4-openorbis pacbrew-ps4-portlibs && \
+    yes | pacman -Scc && \
     cp /opt/pacbrew/ps4/openorbis/ps4vars.sh /root/.bash_aliases && \
     sed -i '306i #include <cstdlib>' /opt/pacbrew/ps4/openorbis/include/c++/v1/cmath
 

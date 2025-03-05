@@ -15,6 +15,8 @@
     limitations under the License.
 */
 
+#include <yoga/YGNode.h>
+
 #include <borealis/core/application.hpp>
 #include <borealis/core/font.hpp>
 #include <borealis/core/i18n.hpp>
@@ -446,6 +448,7 @@ void Label::draw(NVGcontext* vg, float x, float y, float width, float height, St
 
     enum NVGalign horizAlign = this->getNVGHorizontalAlign();
     enum NVGalign vertAlign  = this->getNVGVerticalAlign();
+    int cursor_position = -1;
 
     nvgFontSize(vg, this->fontSize);
     nvgTextAlign(vg, horizAlign | vertAlign);
@@ -453,6 +456,14 @@ void Label::draw(NVGcontext* vg, float x, float y, float width, float height, St
     nvgFontQuality(vg, this->fontQuality);
     nvgTextLineHeight(vg, this->lineHeight);
     nvgFillColor(vg, a(this->textColor));
+
+    // Edit cursor
+    if (this->cursor >= (int)CursorPosition::END) {
+        // blink
+        auto blink = ((brls::getCPUTimeUsec() - cursor_blink) >> 10) % 1000 ;
+        if (blink < 500)
+            cursor_position = this->cursor;
+    }
 
     // Animated text
     if (this->animating)
@@ -475,7 +486,7 @@ void Label::draw(NVGcontext* vg, float x, float y, float width, float height, St
     else if (this->isWrapping)
     {
         nvgTextAlign(vg, horizAlign | NVG_ALIGN_TOP);
-        nvgTextBox(vg, x, y, width, this->fullText.c_str(), nullptr);
+        nvgTextBoxWithCursor(vg, x, y, width, this->fullText.c_str(), nullptr, cursor_position);
     }
     // Truncated text
     else
@@ -493,41 +504,7 @@ void Label::draw(NVGcontext* vg, float x, float y, float width, float height, St
         else if (vertAlign == NVG_ALIGN_BOTTOM)
             textY += height;
 
-        float nextX = nvgText(vg, textX, textY, this->truncatedText.c_str(), nullptr);
-
-        // 绘制编辑游标
-        if (this->cursor >= (int)CursorPosition::END) {
-            // blink
-            auto blink = ((brls::getCPUTimeUsec() - cursor_blink) >> 10) % 1000 ;
-            if (blink > 500)
-                return;
-
-            nvgSave(vg);
-            float lineh;
-            nvgTextMetrics(vg, NULL, NULL, &lineh);
-            float cursorX = x;
-            int textSize = this->truncatedText.size();
-            if (this->cursor == (int)CursorPosition::END) {
-                cursorX = nextX;
-            } else if (this->cursor > (int)CursorPosition::START) {
-                if (textSize > this->cursor) {
-                    std::vector<NVGglyphPosition> glyphs;
-                    glyphs.resize(textSize);
-                    int nglyphs = nvgTextGlyphPositions(vg, x, y, this->truncatedText.c_str(), NULL, glyphs.data(), textSize);
-                    if (nglyphs <= this->cursor) {
-                        cursorX = nextX;
-                    } else {
-                        cursorX = glyphs.at(this->cursor).x;
-                    }
-                } else if (textSize == this->cursor) {
-                    cursorX = nextX;
-                }
-            }
-            nvgBeginPath(vg);
-            nvgRect(vg, cursorX, y, 1, lineh);
-            nvgFill(vg);
-            nvgRestore(vg);
-        }
+        nvgTextWithCursor(vg, textX, textY, this->truncatedText.c_str(), nullptr, cursor_position);
     }
 }
 

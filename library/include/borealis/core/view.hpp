@@ -17,14 +17,8 @@
 
 #pragma once
 
-#ifndef _MSC_VER
-#include <cxxabi.h>
-#endif
 #include <nanovg.h>
 #include <stdio.h>
-#include <tinyxml2.h>
-#include <yoga/YGNode.h>
-
 #include <borealis/core/actions.hpp>
 #include <borealis/core/animation.hpp>
 #include <borealis/core/event.hpp>
@@ -96,6 +90,13 @@
 #undef TRANSPARENT
 #undef RELATIVE
 #undef ABSOLUTE
+
+namespace tinyxml2
+{
+    class XMLDocument;
+    class XMLElement;
+}
+struct YGNode;
 
 namespace brls
 {
@@ -286,8 +287,6 @@ class View
     bool culled = true; // will be culled by the parent Box, if any
 
     float aspectRatio = 0;
-
-    std::vector<tinyxml2::XMLDocument*> boundDocuments;
 
     std::unordered_map<std::string, AutoAttributeHandler> autoAttributes;
     std::unordered_map<std::string, FloatAttributeHandler> percentageAttributes;
@@ -1082,10 +1081,9 @@ class View
     void registerFilePathXMLAttribute(std::string name, FilePathAttributeHandler handler);
 
     /**
-     * Binds the given XML document to the view for ownership. The
-     * document will then be deleted when the view is.
+     * Get the XML document for the XML file, creating a new one if none is cached.
      */
-    void bindXMLDocument(tinyxml2::XMLDocument* document);
+    static std::shared_ptr<tinyxml2::XMLDocument> getXMLCache(std::string_view path);
 
     /**
      * Returns if the given XML attribute name is valid for that view.
@@ -1207,49 +1205,18 @@ class View
     void resetClickAnimation();
     void playClickAnimation(bool reverse = false, bool animateBack = true, bool force = false);
 
-    std::string getClassString() const
-    {
-        // Taken from: https://stackoverflow.com/questions/281818/unmangling-the-result-of-stdtype-infoname/4541470#4541470
-        const char* name = typeid(*this).name();
-#ifndef _MSC_VER
-        int status       = 0;
-        std::unique_ptr<char, void (*)(void*)> res {
-            abi::__cxa_demangle(name, NULL, NULL, &status),
-            std::free
-        };
-        return (status == 0) ? res.get() : name;
-#else
-        return name;
-#endif
-    }
+    std::string getClassString() const;
 
-    std::string describe() const
-    {
-        std::string classString = this->getClassString();
+    std::string describe() const;
 
-        if (this->id != "")
-            return classString + " (id=\"" + this->id + "\")";
+    YGNode* getYGNode();
 
-        return classString;
-    }
-
-    YGNode* getYGNode()
-    {
-        return this->ygNode;
-    }
-
-    const std::vector<Action>& getActions()
-    {
-        return this->actions;
-    }
+    const std::vector<Action>& getActions();
 
     /**
      * Get the vector of all gesture recognizers attached to that view.
      */
-    const std::vector<GestureRecognizer*>& getGestureRecognizers()
-    {
-        return this->gestureRecognizers;
-    }
+    const std::vector<GestureRecognizer*>& getGestureRecognizers();
 
     /**
      * Interrupt every recognizer on this view.
@@ -1490,17 +1457,9 @@ class View
         return this->culled;
     }
 
-    void setAspectRatio(float value)
-    {
-        if(value <= 0) return;
-        this->aspectRatio = value;
-        YGNodeStyleSetAspectRatio(this->ygNode, value);
-        this->invalidate();
-    }
+    void setAspectRatio(float value);
 
-    float getAspectRatio(){
-        return this->aspectRatio;
-    }
+    float getAspectRatio();
 
     /**
      * Sets the background corner radii of the view. Only for vertical linear style.

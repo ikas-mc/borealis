@@ -72,6 +72,8 @@ SwitchVideoContext::SwitchVideoContext()
     this->nvgContext = nvgCreateDk(&*this->renderer, NVG_ANTIALIAS | NVG_STENCIL_STROKES);
 
     Application::setWindowSize(this->framebufferWidth, this->framebufferHeight);
+
+    setSwapInterval(VideoContext::swapInterval);
 }
 
 void SwitchVideoContext::createFramebufferResources()
@@ -226,6 +228,12 @@ void SwitchVideoContext::endFrame()
 {
     // Now that we are done rendering, present it to the screen
     queue.presentImage(this->swapchain, this->imageSlot);
+}
+
+void SwitchVideoContext::setSwapInterval(int interval)
+{
+    VideoContext::swapInterval = interval;
+    swapchain.setSwapInterval(interval);
 }
 
 void SwitchVideoContext::destroyFramebufferResources()

@@ -241,7 +241,7 @@ void RecyclerFrame::reloadData()
     for (auto const& child : children)
     {
         queueReusableCell((RecyclerCell*)child);
-        this->contentBox->removeView(child, false);
+        this->removeCell(child);
     }
 
     visibleMin = UINT_MAX;
@@ -398,7 +398,7 @@ void RecyclerFrame::cellsRecyclingLoop()
         renderedFrame.size.height -= cellHeight;
 
         queueReusableCell(minCell);
-        this->contentBox->removeView(minCell, false);
+        this->removeCell(minCell);
 
         Logger::debug("Cell #{} - destroyed", visibleMin);
 
@@ -419,7 +419,7 @@ void RecyclerFrame::cellsRecyclingLoop()
         renderedFrame.size.height -= cellHeight;
 
         queueReusableCell(maxCell);
-        this->contentBox->removeView(maxCell, false);
+        this->removeCell(maxCell);
 
         Logger::debug("Cell #{} - destroyed", visibleMax);
 
@@ -492,6 +492,39 @@ void RecyclerFrame::addCellAt(size_t index, size_t downSide)
     }
 
     Logger::debug("Cell #{} - added", index);
+}
+
+void RecyclerFrame::removeCell(View* view)
+{
+    if (!view)
+        return;
+
+    // Find the index of the view
+    size_t index;
+    bool found = false;
+    auto& children = this->contentBox->getChildren();
+
+    for (size_t i = 0; i < children.size(); i++)
+    {
+        View* child = children[i];
+
+        if (child == view)
+        {
+            found = true;
+            index = i;
+            break;
+        }
+    }
+
+    if (!found)
+        return;
+
+    // Remove it
+    children.erase(children.begin() + index);
+
+    view->willDisappear(true);
+
+    this->invalidate();
 }
 
 void RecyclerFrame::onLayout()

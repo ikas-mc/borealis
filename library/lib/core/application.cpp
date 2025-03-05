@@ -17,8 +17,10 @@
     limitations under the License.
 */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
+#include <yoga/YGNode.h>
 #include <yoga/event/event.h>
 
 #include <algorithm>
@@ -156,8 +158,6 @@ void Application::createWindow(std::string windowTitle)
     Application::registerBuiltInXMLViews();
 
     Application::getWindowCreationDoneEvent()->fire();
-
-    Application::backgroundColor = Application::getTheme().getColor("brls/clear");
 }
 
 bool Application::mainLoop()
@@ -656,7 +656,7 @@ void Application::frame()
 
     // Begin frame and clear
     videoContext->beginFrame();
-    videoContext->clear(backgroundColor);
+    videoContext->clear(Application::getTheme().getColor("brls/clear"));
     float scaleFactor = videoContext->getScaleFactor();
 
     nvgBeginFrame(frameContext.vg, Application::windowWidth, Application::windowHeight, scaleFactor);
@@ -766,6 +766,11 @@ size_t Application::getFPS()
 void Application::setLimitedFPS(size_t fps)
 {
     Application::limitedFrameTime = fps == 0 ? 0 : 1000000.0f / fps;
+}
+
+void Application::setSwapInterval(int interval)
+{
+    Application::platform->getVideoContext()->setSwapInterval(interval);
 }
 
 void Application::notify(const std::string& text)
@@ -1065,8 +1070,8 @@ void Application::setWindowSize(int width, int height)
 
     // Rescale UI
     Application::windowScale   = (float)width / (float)ORIGINAL_WINDOW_WIDTH;
-    Application::contentWidth  = ORIGINAL_WINDOW_WIDTH;
-    Application::contentHeight = (unsigned)roundf((float)height / Application::windowScale);
+    Application::contentWidth  = (float)ORIGINAL_WINDOW_WIDTH;
+    Application::contentHeight = std::ceil((float)height / Application::windowScale);
 
     for (Activity* activity : Application::activitiesStack)
         activity->onWindowSizeChanged();

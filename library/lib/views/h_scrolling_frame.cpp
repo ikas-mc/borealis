@@ -490,6 +490,8 @@ void HScrollingFrame::onChildFocusGained(View* directChild, View* focusedView)
 
 void HScrollingFrame::onChildFocusLost(View* directChild, View* focusedView)
 {
+    Box::onChildFocusLost(directChild, focusedView);
+
     this->childFocused = false;
 }
 
