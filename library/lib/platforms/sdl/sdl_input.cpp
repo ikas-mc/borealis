@@ -432,6 +432,10 @@ SDLInputManager::SDLInputManager(SDL_Window* window)
 
     SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
 
+#ifndef __WINRT__
+    //TODO xbox media remote
+    SDL_GameControllerAddMapping("03004d6e5e0400000180000000007700,xbox media remote,a:b2,b:b3,x:b4,y:b5,back:b1,start:b0,dpdown:b7,dpup:b6,dpleft:b8,dpright:b9,platform:WinRT,");
+#endif
     int controllersCount = SDL_NumJoysticks();
     brls::Logger::info("joystick num: {}", controllersCount);
 
@@ -439,7 +443,19 @@ SDLInputManager::SDLInputManager(SDL_Window* window)
     {
         SDL_JoystickID jid = SDL_JoystickGetDeviceInstanceID(i);
         Logger::info("sdl: joystick {}: \"{}\"", jid, SDL_JoystickNameForIndex(i));
-        controllers.push_back({ jid, SDL_GameControllerOpen(i) });
+        //TODO
+        SDL_GameController* controller = SDL_GameControllerOpen(i);
+        if (controller != nullptr)
+        {
+            controllers.push_back({ jid, controller });
+        }
+        else
+        {
+            brls::Logger::error("open GameController error, joystick index: {}, error message: {}", i, SDL_GetError());
+            char guid[33];
+            SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(i), guid, sizeof(guid));
+            brls::Logger::error("open GameController error, joystick index: {}, guid: {}", i, guid);
+        }
     }
 
     SDL_AddEventWatch(sdlEventWatcher, this->window);
