@@ -432,8 +432,18 @@ SDLInputManager::SDLInputManager(SDL_Window* window)
 
     SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
 
-#ifndef __WINRT__
+#ifdef __WINRT__
     //TODO xbox media remote
+    //b0 menu
+    //b1 view 
+    //b2 select a
+    //b3 b
+    //b4 x
+    //b5 y
+    //b6 up
+    //b7 down
+    //b8 left
+    //b9 right
     SDL_GameControllerAddMapping("03004d6e5e0400000180000000007700,xbox media remote,a:b2,b:b3,x:b4,y:b5,back:b1,start:b0,dpdown:b7,dpup:b6,dpleft:b8,dpright:b9,platform:WinRT,");
 #endif
     int controllersCount = SDL_NumJoysticks();
