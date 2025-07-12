@@ -36,6 +36,10 @@
 #include <borealis/platforms/glfw/glfw_platform.hpp>
 #endif
 
+#ifdef __WINRT_NEW__
+#include <borealis/platforms/winrt/winrt_platform.hpp>
+#endif
+
 #ifdef __SDL2__
 #include <borealis/platforms/sdl/sdl_platform.hpp>
 #endif
@@ -53,6 +57,8 @@ Platform* Platform::createPlatform()
     return new PsvPlatform();
 #elif defined(PS4)
     return new Ps4Platform();
+#elif defined(__WINRT_NEW__)
+    return new WinRTPlatform();
 #elif defined(__SDL2__)
     return new SDLPlatform();
 #elif defined(__GLFW__)

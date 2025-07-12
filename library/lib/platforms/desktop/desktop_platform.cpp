@@ -984,6 +984,7 @@ void DesktopPlatform::openBrowser(std::string url)
     winrt::Windows::Foundation::Uri uri{ rawUrl };
     if (uri.SchemeName() == winrt::to_hstring("file")) {
         //must be called from UI thread
+        //TODO file
         auto task = winrt::Windows::System::Launcher::LaunchFolderPathAsync(rawUrl);
         auto success = concurrency::create_task([task] {
             return task.get();

@@ -29,6 +29,12 @@ D3D11Context::D3D11Context(GLFWwindow* window, int width, int height)
     this->hWnd = glfwGetWin32Window(window);
     this->initDX(this->hWnd, nullptr, width, height);
 }
+#elif defined(__WINRT_NEW__)
+D3D11Context::D3D11Context(void* window, int width, int height)
+{
+	ABI::Windows::UI::Core::ICoreWindow* coreWindow = (ABI::Windows::UI::Core::ICoreWindow*)window;
+    this->initDX(nullptr, coreWindow, width, height);
+}
 #elif defined(__SDL2__)
 D3D11Context::D3D11Context(SDL_Window* window, int width, int height)
 {
@@ -124,7 +130,7 @@ bool D3D11Context::initDX(HWND hWnd, IUnknown* coreWindow, int width, int height
         swapDesc.Flags              = 0;
         swapDesc.Scaling            = DXGI_SCALING_STRETCH;
 #ifdef __WINRT__
-        swapDesc.Scaling = DXGI_SCALING_NONE;
+        //swapDesc.Scaling = DXGI_SCALING_NONE;
         swapDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 #else
         if (IsWindows10OrGreater()) {

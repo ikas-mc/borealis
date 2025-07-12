@@ -338,7 +338,7 @@ class Application
     }
 
     static void tryDeinitFirstResponder(View* view);
-
+    static void clear ();
   private:
     inline static bool inited               = false;
     inline static bool quitRequested        = false;
@@ -407,7 +407,7 @@ class Application
     static void navigate(FocusDirection direction, bool repeating);
 
     static void frame();
-    static void clear();
+  
     static void exit();
 
     /**

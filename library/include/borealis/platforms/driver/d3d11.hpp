@@ -34,6 +34,8 @@ class D3D11Context
   public:
 #ifdef __GLFW__
     D3D11Context(GLFWwindow* window, int width, int height);
+#elif defined(__WINRT_NEW__)
+    D3D11Context(void* window, int width, int height);    
 #elif defined(__SDL2__)
     D3D11Context(SDL_Window* window, int width, int height);
 #endif
