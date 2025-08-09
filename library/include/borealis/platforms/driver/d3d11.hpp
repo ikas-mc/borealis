@@ -53,6 +53,8 @@ class D3D11Context
 
     IDXGISwapChain* getSwapChain() { return this->swapChain; }
 
+    ID3D11DeviceContext* getDeviceContext() { return this->deviceContext; }
+
   private:
     ID3D11Device* device                     = nullptr;
     ID3D11DeviceContext* deviceContext       = nullptr;
