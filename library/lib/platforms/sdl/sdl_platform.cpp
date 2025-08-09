@@ -22,6 +22,12 @@
 #include <borealis/platforms/sdl/sdl_platform.hpp>
 #include <unordered_map>
 
+#ifdef __WINRT__
+#include <winrt/Windows.ApplicationModel.DataTransfer.h>
+#include <winrt/Windows.Foundation.h>
+#include <ppltasks.h>
+#endif
+
 #if defined(IOS) || defined(TVOS)
 #include <sys/utsname.h>
 
@@ -171,15 +177,40 @@ bool SDLPlatform::isScreenDimmingDisabled()
 
 void SDLPlatform::pasteToClipboard(const std::string& text)
 {
+#ifdef __WINRT__
+    using namespace winrt::Windows::ApplicationModel::DataTransfer;
+    auto dataPackage = DataPackage ();
+    dataPackage.SetText (winrt::to_hstring (text));
+    if (!Clipboard::SetContentWithOptions (dataPackage, nullptr))
+    {
+        brls::Logger::error ("Failed to set clipboard content, text={}", text);
+    }
+#else
     SDL_SetClipboardText(text.c_str());
+#endif
 }
 
 std::string SDLPlatform::pasteFromClipboard()
 {
+
+#ifdef __WINRT__
+    using namespace winrt::Windows::ApplicationModel::DataTransfer;
+    DataPackageView dataPackageView = Clipboard::GetContent ();
+    if (dataPackageView.Contains (StandardDataFormats::Text ()))
+    {
+        winrt::hstring text = concurrency::create_task ([dataPackageView] {
+            return dataPackageView.GetTextAsync ().get ();
+            }).get ();
+        return winrt::to_string (text);
+    } else {
+        return "";
+    }
+#else
     char *str = SDL_GetClipboardText();
     if (!str)
         return "";
     return std::string{str};
+#endif
 }
 
 std::string SDLPlatform::getName()

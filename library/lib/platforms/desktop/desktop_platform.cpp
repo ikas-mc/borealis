@@ -49,7 +49,6 @@
 #include <winrt/Windows.Networking.Connectivity.h>
 #include <winrt/Windows.Devices.WiFi.h>
 #include <winrt/Windows.UI.ViewManagement.h>
-#include <winrt/Windows.System.Display.h>
 using winrt::Windows::Devices::WiFi::WiFiAdapter;
 using winrt::Windows::UI::ViewManagement::UIColorType;
 using winrt::Windows::UI::ViewManagement::UISettings;
@@ -456,6 +455,7 @@ DesktopPlatform::DesktopPlatform()
     }
 
 #if defined(__WINRT__)
+    displayRequest = winrt::Windows::System::Display::DisplayRequest ();
 #elif defined(_WIN32)
     this->hLCD = ::CreateFileA("\\\\.\\LCD", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 #endif
@@ -666,8 +666,7 @@ void DesktopPlatform::disableScreenDimming(bool disable, const std::string& reas
 #elif __WINRT__
         try
         {
-            DisplayRequest request{};
-            request.RequestActive();
+            displayRequest.RequestActive();
         }
         catch(const std::exception& e)
         {
@@ -690,8 +689,7 @@ void DesktopPlatform::disableScreenDimming(bool disable, const std::string& reas
 #elif __WINRT__
         try
         {
-            DisplayRequest request{};
-            request.RequestRelease();
+            displayRequest.RequestRelease();
         }
         catch(const std::exception& e)
         {

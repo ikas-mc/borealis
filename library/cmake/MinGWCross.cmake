@@ -4,8 +4,6 @@
 set(MINGW_PREFIX   /usr/x86_64-w64-mingw32/)
 set(CMAKE_SYSTEM_NAME               Windows)
 set(CMAKE_SYSTEM_PROCESSOR           x86_64)
-# Actually a hack, w/o this will cause some strange errors
-set(CMAKE_HOST_WIN32                 TRUE)
 
 
 set(CMAKE_FIND_ROOT_PATH            ${MINGW_PREFIX})

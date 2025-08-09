@@ -30,6 +30,9 @@
 #include <IOKit/pwr_mgt/IOPMLib.h>
 #endif
 
+#if defined(__WINRT__)
+#include <winrt/windows.system.display.h>
+#endif
 namespace brls
 {
 
@@ -79,6 +82,8 @@ class DesktopPlatform : public Platform
     bool screenDimmingDisabled = false;
 #ifdef __linux__
     uint32_t inhibitCookie = 0;
+#elif defined(__WINRT__)
+    winrt::Windows::System::Display::DisplayRequest displayRequest{ nullptr };
 #elif defined(_WIN32)
     HANDLE hLCD;
 #elif defined(IOS) || defined(TVOS)
