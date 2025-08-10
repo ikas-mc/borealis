@@ -184,9 +184,9 @@ bool D3D11Context::initDX(HWND hWnd, IUnknown* coreWindow, int width, int height
 #endif
         return false;
     }
-
+#ifndef __WINRT__
     this->GetDpiForWindow = (UINT(WINAPI*)(HWND))GetProcAddress(GetModuleHandleW(L"USER32.DLL"), "GetDpiForWindow");
-
+#endif
     return true;
 }
 

@@ -52,6 +52,7 @@ namespace brls
 
     void WinRTPlatform::createWindow(std::string windowTitle, uint32_t windowWidth, uint32_t windowHeight, float windowXPos, float windowYPos)
     {
+        brls::Logger::info ("winrt createWindow: {}", windowTitle);
         coreWindow = winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread();
         displayRequest =  winrt::Windows::System::Display::DisplayRequest();
         this->videoContext = new WinRTVideoContext(coreWindow, windowTitle, windowWidth, windowHeight, windowXPos, windowYPos);

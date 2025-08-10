@@ -13,14 +13,6 @@
 #define EDIT_TEXT_DIALOG_BACKGROUND_TRANSLUCENT true
 #endif
 
-#ifdef __WINRT__
-#include <winrt/Windows.ApplicationModel.DataTransfer.h>
-#include <winrt/Windows.Foundation.h>
-#include <ppltasks.h>
-using namespace winrt;
-using namespace Windows::ApplicationModel::DataTransfer;
-using namespace Windows::Foundation;
-#endif
 namespace brls
 {
 
@@ -107,39 +99,32 @@ namespace brls
                     });
                 return true; }, true);
 
-        keyEvent = Application::getPlatform()->getInputManager()->getKeyboardKeyStateChanged()->subscribe([this](const KeyState& state) {
-            if (!state.pressed) return;
 
-            switch (state.key) {
-                case BRLS_KBD_KEY_BACKSPACE:
-                case BRLS_KBD_KEY_DELETE: // This is to ensure that the delete operation of the PSV ime will not be ignored
-                    this->backspaceEvent.fire();
-                    break;
-                case BRLS_KBD_KEY_V:
+        // register paste action
+        int pasteKey = BRLS_KBD_MODIFIER_CTRL;
 #ifdef __APPLE__
-                    if (state.mods & (BRLS_KBD_MODIFIER_CTRL | BRLS_KBD_MODIFIER_META)) {
-#else
-                    if (state.mods & BRLS_KBD_MODIFIER_CTRL) {
-#endif
-#ifdef __WINRT__
-                        DataPackageView dataPackageView = Clipboard::GetContent();
-                        if (dataPackageView.Contains(StandardDataFormats::Text()))
-                        {
-                            winrt::hstring text = concurrency::create_task([dataPackageView] {
-                                return dataPackageView.GetTextAsync().get();
-                                }).get();
-                            this->clipboardEvent.fire(winrt::to_string(text));
-                        }
-#else
 
-                        this->clipboardEvent.fire(Application::getPlatform()->pasteFromClipboard());
-#endif            
-                    }
-                    break;
-                default:
-                    break;
-            }
+        pasteKey = BRLS_KBD_MODIFIER_META;
+#endif
+
+        this->registerAction({ BRLS_KBD_KEY_V, pasteKey }, [this](...)
+        {
+            this->clipboardEvent.fire(Application::getPlatform()->pasteFromClipboard());
+            return true;
         });
+
+        // register delete action
+        this->registerAction({ BRLS_KBD_KEY_DELETE }, [this](...)
+        {
+            // This is to ensure that the delete operation of the PSV ime will not be ignored
+            this->backspaceEvent.fire();
+            return true;
+        }, true);
+        this->registerAction({ BRLS_KBD_KEY_BACKSPACE }, [this](...)
+        {
+            this->backspaceEvent.fire();
+            return true;
+        }, true);
 
         this->registerAction("hints/delete"_i18n, BUTTON_BACK, [this](...)
             {
@@ -175,10 +160,7 @@ namespace brls
         this->init = true;
     }
 
-    EditTextDialog::~EditTextDialog()
-    {
-        Application::getPlatform()->getInputManager()->getKeyboardKeyStateChanged()->unsubscribe(keyEvent);
-    }
+    EditTextDialog::~EditTextDialog() = default;
 
     void EditTextDialog::open()
     {

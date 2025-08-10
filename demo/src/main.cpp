@@ -32,6 +32,20 @@
 #include "tab/text_test_tab.hpp"
 #include "activity/main_activity.hpp"
 
+#ifdef __WINRT__
+#include <windows.h>
+#include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.UI.Core.h>
+#include <winrt/Windows.ApplicationModel.Core.h>
+#include <winrt/Windows.Storage.Streams.h>
+#include <winrt/Windows.UI.ViewManagement.h>
+#endif
+
+#ifdef __WINRT_NEW__
+#include <borealis/platforms/winrt/winrt_app.hpp>
+#endif
+
 #if defined(__PSV__) && defined(BOREALIS_USE_OPENGL)
 // Needed for the OpenGL driver to work
 extern "C" unsigned int sceLibcHeapSize = 2 * 1024 * 1024;
@@ -41,6 +55,37 @@ using namespace brls::literals; // for _i18n
 
 int main(int argc, char* argv[])
 {
+#ifdef __WINRT__
+    setlocale (LC_ALL, ".utf8");
+
+    //TODO use config @ikas
+    brls::Logger::setLogLevel (brls::LogLevel::LOG_DEBUG);
+    brls::Application::enableDebuggingView (false);
+
+    auto appLocal = winrt::Windows::Storage::AppDataPaths::GetDefault ().LocalAppData ();
+    auto const time = std::chrono::current_zone ()->to_local (std::chrono::system_clock::now ());
+    auto logFile = std::format ("{}\\borealis-demo.{:%Y-%m-%d-%H-%M-%S}.log", winrt::to_string (appLocal), time);
+    brls::Logger::setLogOutput (std::fopen (logFile.c_str (), "w+"));
+
+    if (IsDebuggerPresent ()) {
+        brls::Logger::getLogEvent ()->subscribe ([](brls::Logger::TimePoint now, brls::LogLevel level, const std::string& log) {
+            auto message = std::format (L"[{}] {}\n", (int)level, winrt::to_hstring (log));
+            OutputDebugString (message.c_str ());
+            });
+    }
+
+    auto cmdline = winrt::to_string (GetCommandLine ());
+    brls::Logger::debug ("app start,cmdline:{}", cmdline);
+
+    //for xbox 
+    winrt::Windows::UI::Core::SystemNavigationManager::GetForCurrentView ().BackRequested ([] (
+        winrt::Windows::Foundation::IInspectable const,
+        winrt::Windows::UI::Core::BackRequestedEventArgs const& args
+        ) {
+            args.Handled (true);
+        });
+
+#else
     // We recommend to use INFO for real apps
     for (int i = 1; i < argc; i++) {
         if (std::strcmp(argv[i], "-d") == 0) { // Set log level
@@ -52,7 +97,7 @@ int main(int argc, char* argv[])
             brls::Application::enableDebuggingView(true);
         }
     }
-
+#endif
     brls::Platform::APP_LOCALE_DEFAULT = brls::LOCALE_AUTO;
 
     // Init the app and i18n
@@ -99,6 +144,12 @@ int main(int argc, char* argv[])
     return EXIT_SUCCESS;
 }
 
-#ifdef __WINRT__
+#ifdef __WINRT_NEW__
+int __stdcall wWinMain (HINSTANCE, HINSTANCE, PWSTR szCmdLine, int)
+{
+    (void)szCmdLine;
+    return WinrtApp::RunApp (main);
+}
+#elif __WINRT__
 #include <borealis/core/main.hpp>
 #endif
