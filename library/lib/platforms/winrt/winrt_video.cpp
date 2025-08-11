@@ -47,7 +47,7 @@ namespace brls
 
     static double scaleFactor = 1.0;
 
-    static winrt::Windows::Foundation::Rect getWindowRawSize (winrt::Windows::Foundation::Rect coreWindowSize, double scaleFactor)
+   static winrt::Windows::Foundation::Rect getWindowRawSize (winrt::Windows::Foundation::Rect coreWindowSize, double scaleFactor)
     {
         winrt::Windows::Foundation::Rect rect{};
         bool isXbox = winrt::Windows::System::Profile::AnalyticsInfo::VersionInfo ().DeviceFamily () == L"Windows.Xbox";
@@ -56,24 +56,28 @@ namespace brls
             GAMING_DEVICE_MODEL_INFORMATION infos;
             if (SUCCEEDED (GetGamingDeviceModelInformation (&infos)))
             {
-                if (infos.deviceId == GAMING_DEVICE_DEVICE_ID_XBOX_SERIES_X || infos.deviceId == GAMING_DEVICE_DEVICE_ID_XBOX_SERIES_X_DEVKIT)
+                if (infos.deviceId == GAMING_DEVICE_DEVICE_ID_XBOX_SERIES_X 
+                    || infos.deviceId == GAMING_DEVICE_DEVICE_ID_XBOX_SERIES_X_DEVKIT
+                    || infos.deviceId == GAMING_DEVICE_DEVICE_ID_XBOX_ONE_X
+                    || infos.deviceId == GAMING_DEVICE_DEVICE_ID_XBOX_ONE_X_DEVKIT
+                    || infos.deviceId == GAMING_DEVICE_DEVICE_ID_XBOX_ONE_S
+                    )
                 {
-                    //xsx
+                    auto hdmiDisplayInformation = winrt::Windows::Graphics::Display::Core::HdmiDisplayInformation::GetForCurrentView ();
+                    auto currentDisplayMode = hdmiDisplayInformation.GetCurrentDisplayMode ();
+                    rect.Width = currentDisplayMode.ResolutionWidthInRawPixels ();
+                    rect.Height = currentDisplayMode.ResolutionHeightInRawPixels ();
+                    rect.X = 0;
+                    rect.Y = 0;
+                    return rect;
                 }
             }
-            auto hdmiDisplayInformation = winrt::Windows::Graphics::Display::Core::HdmiDisplayInformation::GetForCurrentView ();
-            auto currentDisplayMode = hdmiDisplayInformation.GetCurrentDisplayMode ();
-            rect.Width = currentDisplayMode.ResolutionWidthInRawPixels ();
-            rect.Height = currentDisplayMode.ResolutionHeightInRawPixels ();
-            rect.X = 0;
-            rect.Y = 0;
-        } else
-        {
-            rect.Width = coreWindowSize.Width * scaleFactor;
-            rect.Height = coreWindowSize.Height * scaleFactor;
-            rect.X = coreWindowSize.X * scaleFactor;
-            rect.Y = coreWindowSize.Y * scaleFactor;
-        }
+        } 
+      
+        rect.Width = coreWindowSize.Width * scaleFactor;
+        rect.Height = coreWindowSize.Height * scaleFactor;
+        rect.X = coreWindowSize.X * scaleFactor;
+        rect.Y = coreWindowSize.Y * scaleFactor;
         return rect;
     }
 
