@@ -121,6 +121,7 @@ class Logger
             fmt::print(logOut, "{:%H:%M:%S}.{:03d}\033{}[{}]\033[0m {}\n", time_tm, (int)ms, color, prefix, log);
 #endif
 
+            //std::fflush (logOut);
             logEvent.fire(now, level, log);
         }
         catch (const std::exception& e)
