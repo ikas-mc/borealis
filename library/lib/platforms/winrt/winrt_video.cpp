@@ -128,9 +128,9 @@ namespace brls
 
         Logger::info ("winrt: USE_D3D11");
         D3D11_CONTEXT = std::make_unique<D3D11Context> (this->window, windowWidth, windowHeight);
+        D3D11_CONTEXT->setSwapInterval (VideoContext::swapInterval);
+
         this->nvgContext = nvgCreateD3D11 (D3D11_CONTEXT->getDevice (), NVG_ANTIALIAS | NVG_STENCIL_STROKES);
-
-
         if (!this->nvgContext)
         {
             brls::fatal ("winrt: unable to init nanovg");
