@@ -373,20 +373,6 @@ namespace brls
 			}
 		}
 
-		state->buttons[BUTTON_X] |= getKeyboardKeys (BRLS_KBD_KEY_X);
-		state->buttons[BUTTON_Y] |= getKeyboardKeys (BRLS_KBD_KEY_Y);
-		state->buttons[BUTTON_BACK] |= getKeyboardKeys (BRLS_KBD_KEY_F1);
-		// state->buttons[BUTTON_GUIDE] |= getKeyboardKeys(BRLS_KBD_KEY_UNKNOWN);
-		state->buttons[BUTTON_START] |= getKeyboardKeys (BRLS_KBD_KEY_F2);
-		state->buttons[BUTTON_LSB] |= getKeyboardKeys (BRLS_KBD_KEY_Q);
-		state->buttons[BUTTON_RSB] |= getKeyboardKeys (BRLS_KBD_KEY_P);
-		state->buttons[BUTTON_LB] |= getKeyboardKeys (BRLS_KBD_KEY_L);
-		state->buttons[BUTTON_RB] |= getKeyboardKeys (BRLS_KBD_KEY_R);
-		state->buttons[BUTTON_X] |= getKeyboardKeys (BRLS_KBD_KEY_R);
-		state->buttons[BUTTON_UP] |= getKeyboardKeys (BRLS_KBD_KEY_UP);
-		state->buttons[BUTTON_DOWN] |= getKeyboardKeys (BRLS_KBD_KEY_DOWN);
-		state->buttons[BUTTON_LEFT] |= getKeyboardKeys (BRLS_KBD_KEY_LEFT);
-		state->buttons[BUTTON_RIGHT] |= getKeyboardKeys (BRLS_KBD_KEY_RIGHT);
 
 		if (Application::isSwapInputKeys ())
 		{
@@ -401,6 +387,11 @@ namespace brls
 			state->buttons[BUTTON_B] |= getKeyboardKeys (BRLS_KBD_KEY_ESCAPE);
 			// state->buttons[BUTTON_B] |= getKeyboardKeys(SDL_SCANCODE_AC_BACK);
 		}
+		state->buttons[BUTTON_UP] |= getKeyboardKeys (BRLS_KBD_KEY_UP);
+		state->buttons[BUTTON_DOWN] |= getKeyboardKeys (BRLS_KBD_KEY_DOWN);
+		state->buttons[BUTTON_LEFT] |= getKeyboardKeys (BRLS_KBD_KEY_LEFT);
+		state->buttons[BUTTON_RIGHT] |= getKeyboardKeys (BRLS_KBD_KEY_RIGHT);
+
 
 		state->buttons[BUTTON_NAV_UP] |= state->buttons[BUTTON_UP];
 		state->buttons[BUTTON_NAV_RIGHT] |= state->buttons[BUTTON_RIGHT];
