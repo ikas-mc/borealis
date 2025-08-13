@@ -3,9 +3,7 @@
 #define NANOVG_D3D11_IMPLEMENTATION
 #include <nanovg_d3d11.h>
 #include <versionhelpers.h>
-#ifdef __ALLOW_TEARING__
 #include <dxgi1_6.h>
-#endif
 #ifdef __GLFW__
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
@@ -30,10 +28,10 @@ D3D11Context::D3D11Context(GLFWwindow* window, int width, int height)
     this->initDX(this->hWnd, nullptr, width, height);
 }
 #elif defined(__WINRT_NEW__)
-D3D11Context::D3D11Context(void* window, int width, int height)
+D3D11Context::D3D11Context(void* window, int width, int height,bool enableTearing)
 {
 	ABI::Windows::UI::Core::ICoreWindow* coreWindow = (ABI::Windows::UI::Core::ICoreWindow*)window;
-    this->initDX(nullptr, coreWindow, width, height);
+    this->initDX(nullptr, coreWindow, width, height, enableTearing);
 }
 #elif defined(__SDL2__)
 D3D11Context::D3D11Context(SDL_Window* window, int width, int height)
@@ -61,7 +59,7 @@ D3D11Context::~D3D11Context()
     this->unInitDX();
 }
 
-bool D3D11Context::initDX(HWND hWnd, IUnknown* coreWindow, int width, int height)
+bool D3D11Context::initDX(HWND hWnd, IUnknown* coreWindow, int width, int height, bool enableTearing)
 {
     HRESULT hr = S_OK;
 
@@ -76,6 +74,9 @@ bool D3D11Context::initDX(HWND hWnd, IUnknown* coreWindow, int width, int height
     };
 
     static const D3D_FEATURE_LEVEL levelAttempts[] = {
+        D3D_FEATURE_LEVEL_12_1,
+        D3D_FEATURE_LEVEL_12_0,
+        D3D_FEATURE_LEVEL_11_1,
         D3D_FEATURE_LEVEL_11_1, // Direct3D 11.1 SM 6
         D3D_FEATURE_LEVEL_11_0, // Direct3D 11.0 SM 5
         D3D_FEATURE_LEVEL_10_1, // Direct3D 10.1 SM 4
@@ -85,6 +86,7 @@ bool D3D11Context::initDX(HWND hWnd, IUnknown* coreWindow, int width, int height
         D3D_FEATURE_LEVEL_9_1, // Direct3D 9.1  SM 2
     };
 
+    D3D_FEATURE_LEVEL d3dFeatureLevel = D3D_FEATURE_LEVEL_9_1;
     for (size_t driver = 0; driver < ARRAYSIZE(driverAttempts); driver++)
     {
         hr = D3D11CreateDevice(
@@ -96,11 +98,12 @@ bool D3D11Context::initDX(HWND hWnd, IUnknown* coreWindow, int width, int height
             ARRAYSIZE(levelAttempts),
             D3D11_SDK_VERSION,
             &this->device,
-            nullptr,
+            &d3dFeatureLevel,
             &this->deviceContext);
 
         if (SUCCEEDED(hr))
         {
+            Logger::info ("D3D11 use level: {}", (int)d3dFeatureLevel);
             break;
         }
     }
@@ -119,15 +122,30 @@ bool D3D11Context::initDX(HWND hWnd, IUnknown* coreWindow, int width, int height
 
     if (SUCCEEDED(hr))
     {
+        // Determines whether tearing support is available for fullscreen borderless windows.
+        if (enableTearing)
+        {
+            IDXGIFactory5* factory5 =nullptr;
+            if (SUCCEEDED (dxgiFactory->QueryInterface (IID_PPV_ARGS (&factory5))))
+            {
+                BOOL tearingFlag = FALSE;
+                if (SUCCEEDED (factory5->CheckFeatureSupport (DXGI_FEATURE_PRESENT_ALLOW_TEARING, &tearingFlag, sizeof (tearingFlag)))) {
+                    allowTearing = tearingFlag;
+                    Logger::debug ("winrt: USE_D3D11 allowTearing:{}", allowTearing);
+                };
+            }
+            D3D_API_RELEASE (factory5);
+        }
+
         DXGI_SWAP_CHAIN_DESC1 swapDesc;
         ZeroMemory(&swapDesc, sizeof(swapDesc));
         swapDesc.SampleDesc.Count   = sampleDesc.Count;
         swapDesc.SampleDesc.Quality = sampleDesc.Quality;
-        swapDesc.Format             = DXGI_FORMAT_R8G8B8A8_UNORM;
+        swapDesc.Format             = DXGI_FORMAT_B8G8R8A8_UNORM;
         swapDesc.Stereo             = FALSE;
         swapDesc.BufferUsage        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
         swapDesc.BufferCount        = SwapChainBufferCount;
-        swapDesc.Flags              = 0;
+        swapDesc.Flags              = allowTearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u;
         swapDesc.Scaling            = DXGI_SCALING_STRETCH;
 #ifdef __WINRT__
         //swapDesc.Scaling = DXGI_SCALING_NONE;
@@ -160,6 +178,15 @@ bool D3D11Context::initDX(HWND hWnd, IUnknown* coreWindow, int width, int height
                 nullptr,
                 &this->swapChain);
         }
+
+        IDXGIDevice3* dxgiDevice3;
+        if (SUCCEEDED(dxgiFactory->QueryInterface(IID_PPV_ARGS(&dxgiDevice3))))
+        {
+            if (SUCCEEDED(dxgiDevice3->SetMaximumFrameLatency(1))) {
+                Logger::debug("winrt: USE_D3D11 SetMaximumFrameLatency 1");
+            };
+        }
+        D3D_API_RELEASE (dxgiDevice3);
     }
     D3D_API_RELEASE(dxgiDevice);
     D3D_API_RELEASE(dxgiAdapter);
@@ -210,6 +237,7 @@ double D3D11Context::getScaleFactor()
 #ifdef __WINRT__
     static auto displayInformation = winrt::Windows::Graphics::Display::DisplayInformation::GetForCurrentView();
 
+    //TODO 
     return (unsigned int)displayInformation.LogicalDpi() / 96.0f;
 #else
     if (this->GetDpiForWindow)
@@ -243,7 +271,7 @@ bool D3D11Context::onFramebufferSize(int width, int height, bool init)
 
     if (!init)
     {
-        hr = this->swapChain->ResizeBuffers(SwapChainBufferCount, width, height, DXGI_FORMAT_UNKNOWN, 0);
+        hr = this->swapChain->ResizeBuffers(SwapChainBufferCount, width, height, DXGI_FORMAT_UNKNOWN, allowTearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u);
         if (FAILED(hr))
         {
             return false;
@@ -263,7 +291,7 @@ bool D3D11Context::onFramebufferSize(int width, int height, bool init)
         return false;
     }
 
-    D3D11_TEXTURE2D_DESC texDesc;
+    D3D11_TEXTURE2D_DESC texDesc{};
     texDesc.ArraySize          = 1;
     texDesc.BindFlags          = D3D11_BIND_DEPTH_STENCIL;
     texDesc.CPUAccessFlags     = 0;
@@ -282,7 +310,7 @@ bool D3D11Context::onFramebufferSize(int width, int height, bool init)
         return false;
     }
 
-    D3D11_DEPTH_STENCIL_VIEW_DESC depthViewDesc;
+    D3D11_DEPTH_STENCIL_VIEW_DESC depthViewDesc{};
     depthViewDesc.Format             = DXGI_FORMAT_D24_UNORM_S8_UINT;
     depthViewDesc.ViewDimension      = (sampleDesc.Count > 1) ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
     depthViewDesc.Flags              = 0;
@@ -295,7 +323,7 @@ bool D3D11Context::onFramebufferSize(int width, int height, bool init)
         return false;
     }
 
-    D3D11_VIEWPORT viewport;
+    D3D11_VIEWPORT viewport{};
     viewport.Width    = (float)width;
     viewport.Height   = (float)height;
     viewport.MaxDepth = 1.0f;
@@ -321,10 +349,13 @@ void D3D11Context::beginFrame()
 
 void D3D11Context::endFrame()
 {
-    // https://learn.microsoft.com/zh-cn/windows/win32/api/dxgi/nf-dxgi-idxgiswapchain-present
-    DXGI_PRESENT_PARAMETERS presentParameters;
-    ZeroMemory(&presentParameters, sizeof(DXGI_PRESENT_PARAMETERS));
-    this->swapChain->Present1(interval, 0, &presentParameters);
+    if (allowTearing)
+    {
+        // Recommended to always use tearing if supported when using a sync interval of 0.
+        this->swapChain->Present (0, DXGI_PRESENT_ALLOW_TEARING);
+    } else {
+        this->swapChain->Present (interval, 0);
+    }
 }
 
 void D3D11Context::setSwapInterval(int value)

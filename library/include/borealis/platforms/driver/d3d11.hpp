@@ -35,7 +35,7 @@ class D3D11Context
 #ifdef __GLFW__
     D3D11Context(GLFWwindow* window, int width, int height);
 #elif defined(__WINRT_NEW__)
-    D3D11Context(void* window, int width, int height);    
+    D3D11Context(void* window, int width, int height, bool enableTearing = false);
 #elif defined(__SDL2__)
     D3D11Context(SDL_Window* window, int width, int height);
 #endif
@@ -62,12 +62,13 @@ class D3D11Context
     ID3D11RenderTargetView* renderTargetView = nullptr;
     ID3D11DepthStencilView* depthStencilView = nullptr;
     int interval                             = 1;
+    bool allowTearing                        = false;
 
     UINT(WINAPI* GetDpiForWindow)(HWND);
 
     HWND hWnd = nullptr;
 
-    bool initDX(HWND window, IUnknown* coreWindow, int width, int height);
+    bool initDX(HWND window, IUnknown* coreWindow, int width, int height, bool enableTearing = false);
     void unInitDX();
 };
 

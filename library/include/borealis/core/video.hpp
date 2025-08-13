@@ -77,4 +77,6 @@ class VideoContext
     static inline int monitorIndex = 0;
 
     static inline int swapInterval = 1;
+
+    static inline bool enableTearing = false;
 };
