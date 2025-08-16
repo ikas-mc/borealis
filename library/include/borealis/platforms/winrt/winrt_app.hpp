@@ -5,17 +5,16 @@
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.ApplicationModel.Core.h>
 #include <winrt/Windows.UI.Core.h>
-#include <winrt/Windows.UI.Composition.h>
 #include <winrt/Windows.UI.ViewManagement.h>
+#include <winrt/Windows.ApplicationModel.Activation.h>
+#include <winrt/Windows.Foundation.Collections.h>
 using namespace winrt;
 
 using namespace Windows;
 using namespace Windows::ApplicationModel::Core;
-using namespace Windows::Foundation::Numerics;
-using namespace Windows::UI;
+using namespace Windows::ApplicationModel::Activation;
+using namespace Windows::UI::ViewManagement;
 using namespace Windows::UI::Core;
-using namespace Windows::UI::Composition;
-
 struct WinrtApp : implements<WinrtApp, IFrameworkViewSource, IFrameworkView>
 {
 public:
@@ -33,20 +32,18 @@ public:
 
     void SetWindow(CoreWindow const& window);
 
-    void OnPointerPressed(IInspectable const&, PointerEventArgs const& args);
-
-    void PointerReleased(IInspectable const&, PointerEventArgs const& args);
+    void OnActivated (CoreApplicationView const&, IActivatedEventArgs const& args);
 
     static int RunApp(std::function<int(int,char*[])> callback){
         winrt::init_apartment(winrt::apartment_type::multi_threaded);
-        bool result = winrt::Windows::UI::ViewManagement::ApplicationViewScaling::TrySetDisableLayoutScaling(true);
-        winrt::Windows::ApplicationModel::Core::CoreApplication::Run(winrt::make<WinrtApp>(callback));
+        bool result = ::ApplicationViewScaling::TrySetDisableLayoutScaling(true);
+        CoreApplication::Run(winrt::make<WinrtApp>(callback));
         return 0;
     }
 
 private:
     std::function<int(int,char*[])> callback;
- 
+    std::string commandLine;
 };
 
 

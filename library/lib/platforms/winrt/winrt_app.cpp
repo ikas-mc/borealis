@@ -15,17 +15,16 @@
 */
 
 #include <borealis/platforms/winrt/winrt_app.hpp>
+#include <winrt/Windows.Storage.h>
+#include <winrt/windows.storage.accesscache.h>
 
 using namespace winrt;
 
 using namespace Windows;
 using namespace Windows::ApplicationModel::Core;
-using namespace Windows::Foundation::Numerics;
-using namespace Windows::UI;
-using namespace Windows::UI::Core;
-using namespace Windows::UI::Composition;
+using namespace Windows::Storage::AccessCache;
 
-WinrtApp::WinrtApp(std::function<int(int,char*[])> callback)
+WinrtApp::WinrtApp(std::function<int(int,char*[])> callback):commandLine("")
 {
     this->callback = callback;
 }
@@ -35,8 +34,9 @@ IFrameworkView WinrtApp::CreateView()
     return *this;
 }
 
-void WinrtApp::Initialize(CoreApplicationView const&)
+void WinrtApp::Initialize(CoreApplicationView const& view)
 {
+    view.Activated ({ this, &WinrtApp::OnActivated });
 }
 
 void WinrtApp::Load(hstring const&)
@@ -51,18 +51,37 @@ void WinrtApp::Run()
 {
     CoreWindow window = CoreWindow::GetForCurrentThread();
     window.Activate();
-    const char* argv[] = { "winrt" };//TODO 
-    callback(0, const_cast<char**>(argv));
+    //TODO split
+    std::vector<const char*> argv;
+    argv.push_back ("winrt");
+    if (!commandLine.empty()) {
+        argv.push_back(commandLine.c_str());
+    }
+    callback(static_cast<int>(argv.size()), const_cast<char**>(argv.data()));
 }
 
 void WinrtApp::SetWindow(CoreWindow const& window)
 {
 }
 
-void WinrtApp::OnPointerPressed(IInspectable const&, PointerEventArgs const& args)
+void WinrtApp::OnActivated (CoreApplicationView const&, IActivatedEventArgs const& args)
 {
-}
-
-void WinrtApp::PointerReleased(IInspectable const&, PointerEventArgs const& args)
-{
+    //file
+    if (args.Kind() == ActivationKind::File)
+    {
+        auto fileArgs = args.as<FileActivatedEventArgs>();
+        auto files = fileArgs.Files();
+        if (files.Size() > 0) {
+            auto file = files.First().Current();
+            auto token= StorageApplicationPermissions::FutureAccessList().Add (file);
+            commandLine = winrt::to_string (token);
+        }
+    }
+    //ExecutionAlias  
+    else if (args.Kind() == ActivationKind::CommandLineLaunch)
+    {
+        auto cmdArgs = args.as<CommandLineActivatedEventArgs>();
+        auto operation = cmdArgs.Operation();
+        commandLine = winrt::to_string(operation.Arguments());
+    }
 }
