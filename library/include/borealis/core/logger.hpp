@@ -120,8 +120,10 @@ class Logger
 #else
             fmt::print(logOut, "{:%H:%M:%S}.{:03d}\033{}[{}]\033[0m {}\n", time_tm, (int)ms, color, prefix, log);
 #endif
-
-            //std::fflush (logOut);
+#if _DEBUG
+            //TODO for crash
+            std::fflush (logOut);
+#endif 
             logEvent.fire(now, level, log);
         }
         catch (const std::exception& e)
