@@ -1,19 +1,19 @@
 /*
-    Copyright 2021 natinusala
-    Copyright 2020-2021 p-sam
-    Copyright 2025 ikas-mc
+        Copyright 2021 natinusala
+        Copyright 2020-2021 p-sam
+        Copyright 2025 ikas-mc
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
+        Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License.
+        You may obtain a copy of the License at
 
-        http://www.apache.org/licenses/LICENSE-2.0
+                http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+        Unless required by applicable law or agreed to in writing, software
+        distributed under the License is distributed on an "AS IS" BASIS,
+        WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+        See the License for the specific language governing permissions and
+        limitations under the License.
 */
 
 #include <borealis/core/logger.hpp>
@@ -21,12 +21,6 @@
 
 namespace brls
 {
-
-#define QLAUNCH_PID 0x0100000000001000
-#define QLAUNCH_MOUNT_POINT "qlaunch"
-#define ROMFS_MOUNT_POINT "romfs"
-#define BFSAR_PATH "/sound/qlaunch.bfsar"
-
 const std::wstring SOUNDS_MAP[_SOUND_MAX] = {
     L"", // SOUND_NONE
     L"resources\\sound\\winrt\\SOUND_FOCUS_CHANGE.wav", // SOUND_FOCUS_CHANGE
@@ -45,14 +39,11 @@ const std::wstring SOUNDS_MAP[_SOUND_MAX] = {
 
 WinRTAudioPlayer::WinRTAudioPlayer()
 {
-
-    // Create DirectXTK for Audio objects
     DirectX::AUDIO_ENGINE_FLAGS eflags = DirectX::AudioEngine_Default;
 #ifdef _DEBUG
     eflags |= DirectX::AudioEngine_Debug;
 #endif
     m_audEngine = std::make_unique<DirectX::AudioEngine>(eflags);
-    // m_soundEffect = std::make_unique<DirectX::SoundEffect>(m_audEngine.get(), L"resources\\sound\\winrt\\1.wav");
 }
 
 bool WinRTAudioPlayer::load(enum Sound sound)
@@ -62,14 +53,12 @@ bool WinRTAudioPlayer::load(enum Sound sound)
         return true;
     }
 
-    bool loaded= soundsState[sound];
-
+    bool loaded = soundsState[sound];
     if (!loaded)
     {
         soundsState[sound] = true;
 
         std::wstring soundName = SOUNDS_MAP[sound];
-
         if (soundName.empty())
         {
             return false;
@@ -89,7 +78,8 @@ bool WinRTAudioPlayer::load(enum Sound sound)
 
 bool WinRTAudioPlayer::play(enum Sound sound, float pitch)
 {
-    if (sound == SOUND_NONE){
+    if (sound == SOUND_NONE)
+    {
         return true;
     }
 
@@ -112,11 +102,11 @@ bool WinRTAudioPlayer::play(enum Sound sound, float pitch)
 
 WinRTAudioPlayer::~WinRTAudioPlayer()
 {
-    for (int i = 0; i++; i < _SOUND_MAX)
+    for (int i = 0; i < _SOUND_MAX; i++)
     {
         if (sounds[i])
         {
-            delete sounds[i];
+			delete sounds[i];
             sounds[i] = nullptr;
         }
     }

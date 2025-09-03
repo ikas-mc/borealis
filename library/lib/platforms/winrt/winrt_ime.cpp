@@ -1,6 +1,6 @@
 /*
-    Copyright 2023 zeromake
-    Copyright 2025 ikas-mc
+	Copyright 2023 zeromake
+	Copyright 2025 ikas-mc
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -33,288 +33,282 @@ limitations under the License.
 
 namespace brls
 {
-WinRTImeManager::WinRTImeManager(winrt::Windows::UI::Core::CoreWindow coreWindow):coreWindow(coreWindow)
-{
-}
+	WinRTImeManager::WinRTImeManager(winrt::Windows::UI::Core::CoreWindow coreWindow)
+		: coreWindow(coreWindow)
+	{
+	}
 
-void WinRTImeManager::initCoreText(winrt::Windows::UI::Text::Core::CoreTextInputScope scope)
-{
-    auto manager      = winrt::Windows::UI::Text::Core::CoreTextServicesManager::GetForCurrentView();
-    this->editContext = manager.CreateEditContext();
-    editContext.InputScope(scope);
-    editContext.InputPaneDisplayPolicy(winrt::Windows::UI::Text::Core::CoreTextInputPaneDisplayPolicy::Automatic);
+	void WinRTImeManager::initCoreText(winrt::Windows::UI::Text::Core::CoreTextInputScope scope)
+	{
+		auto manager=winrt::Windows::UI::Text::Core::CoreTextServicesManager::GetForCurrentView();
+		this->editContext=manager.CreateEditContext();
+		editContext.InputScope(scope);
+		editContext.InputPaneDisplayPolicy(winrt::Windows::UI::Text::Core::CoreTextInputPaneDisplayPolicy::Automatic);
 
-    // register composition events
-    editContext.CompositionStarted({ this, &WinRTImeManager::onCompositionStarted });
-    editContext.CompositionCompleted({ this, &WinRTImeManager::onCompositionCompleted });
-    editContext.SelectionRequested({ this, &WinRTImeManager::onSelectionRequested });
-    editContext.SelectionUpdating({ this, &WinRTImeManager::onSelectionUpdating });
+		editContext.CompositionStarted({ this, &WinRTImeManager::onCompositionStarted });
+		editContext.CompositionCompleted({ this, &WinRTImeManager::onCompositionCompleted });
+		editContext.SelectionRequested({ this, &WinRTImeManager::onSelectionRequested });
+		editContext.SelectionUpdating({ this, &WinRTImeManager::onSelectionUpdating });
 
-    // new event handlers
-    editContext.TextRequested({ this, &WinRTImeManager::onTextRequested });
-    editContext.TextUpdating({ this, &WinRTImeManager::onTextUpdating });
+		editContext.TextRequested({ this, &WinRTImeManager::onTextRequested });
+		editContext.TextUpdating({ this, &WinRTImeManager::onTextUpdating });
+		editContext.LayoutRequested({ this, &WinRTImeManager::onLayoutRequested });
+		editContext.FormatUpdating({ this, &WinRTImeManager::onFormatUpdating });
+	}
 
-    editContext.LayoutRequested({ this, &WinRTImeManager::onLayoutRequested2 });
-    editContext.FormatUpdating({ this, &WinRTImeManager::onFormatUpdating });
-}
+	void WinRTImeManager::onLayoutRequested(
+		winrt::Windows::UI::Text::Core::CoreTextEditContext const& /*context*/,
+		winrt::Windows::UI::Text::Core::CoreTextLayoutRequestedEventArgs const& args)
+	{
+		if (rect.X > 0 && rect.Y > 0)
+		{
+			auto windowBounds=coreWindow.Bounds();
 
-void WinRTImeManager::onLayoutRequested2(
-    winrt::Windows::UI::Text::Core::CoreTextEditContext const& /*context*/,
-    winrt::Windows::UI::Text::Core::CoreTextLayoutRequestedEventArgs const& args)
-{
-    if (rect.X > 0 && rect.Y > 0)
-    {
-        auto windowBounds                      = coreWindow.Bounds();
+			float scale=Application::windowScale;
+			double scaleFactor=brls::Application::getPlatform()->getVideoContext()->getScaleFactor();
 
-        float scale        = Application::windowScale;
-        double scaleFactor = brls::Application::getPlatform()->getVideoContext()->getScaleFactor();
+			winrt::Windows::Foundation::Rect rectC {};
+			rectC.X=rect.X * Application::windowScale + windowBounds.X * scaleFactor;
+			rectC.Y=rect.Y * Application::windowScale + windowBounds.Y * scaleFactor;
 
-        winrt::Windows::Foundation::Rect rectC;
-        rectC.X = rect.X * Application::windowScale + windowBounds.X * scaleFactor;
-        rectC.Y = rect.Y * Application::windowScale + windowBounds.Y * scaleFactor;
+			args.Request().LayoutBounds().ControlBounds(rectC);
+			args.Request().LayoutBounds().TextBounds(rectC);
+		}
+	}
 
-        args.Request().LayoutBounds().ControlBounds(rectC);
-        args.Request().LayoutBounds().TextBounds(rectC);
-    }
-}
+	void WinRTImeManager::onFormatUpdating(
+		winrt::Windows::UI::Text::Core::CoreTextEditContext const& /*context*/,
+		winrt::Windows::UI::Text::Core::CoreTextFormatUpdatingEventArgs const& args)
+	{
+	}
 
-void WinRTImeManager::onFormatUpdating(
-    winrt::Windows::UI::Text::Core::CoreTextEditContext const& /*context*/,
-    winrt::Windows::UI::Text::Core::CoreTextFormatUpdatingEventArgs const& args)
-{
-}
+	void WinRTImeManager::onCompositionStarted(
+		winrt::Windows::UI::Text::Core::CoreTextEditContext const& /*context*/,
+		winrt::Windows::UI::Text::Core::CoreTextCompositionStartedEventArgs const& args)
+	{
+	}
 
-void WinRTImeManager::onCompositionStarted(
-    winrt::Windows::UI::Text::Core::CoreTextEditContext const& /*context*/,
-    winrt::Windows::UI::Text::Core::CoreTextCompositionStartedEventArgs const& args)
-{
-    isEditing = true;
-}
+	void WinRTImeManager::onCompositionCompleted(
+		winrt::Windows::UI::Text::Core::CoreTextEditContext const& /*context*/,
+		winrt::Windows::UI::Text::Core::CoreTextCompositionCompletedEventArgs const& args)
+	{
+	}
 
-void WinRTImeManager::onCompositionCompleted(
-    winrt::Windows::UI::Text::Core::CoreTextEditContext const& /*context*/,
-    winrt::Windows::UI::Text::Core::CoreTextCompositionCompletedEventArgs const& args)
-{
-    isEditing = false;
-}
+	void WinRTImeManager::onSelectionRequested(
+		winrt::Windows::UI::Text::Core::CoreTextEditContext const& /*context*/,
+		winrt::Windows::UI::Text::Core::CoreTextSelectionRequestedEventArgs const& args)
+	{
+		brls::Logger().debug("---->onSelectionRequested");
+		args.Request().Selection(this->selection);
+	}
 
-void WinRTImeManager::onSelectionRequested(
-    winrt::Windows::UI::Text::Core::CoreTextEditContext const& /*context*/,
-    winrt::Windows::UI::Text::Core::CoreTextSelectionRequestedEventArgs const& args)
-{
-    brls::Logger().debug("---->onSelectionRequested");
-    args.Request().Selection(this->selection);
-}
+	void WinRTImeManager::onSelectionUpdating(
+		winrt::Windows::UI::Text::Core::CoreTextEditContext const& /*context*/,
+		winrt::Windows::UI::Text::Core::CoreTextSelectionUpdatingEventArgs const& args)
+	{
+		brls::Logger().debug("---->onSelectionUpdating");
+		this->selection.StartCaretPosition=args.Selection().StartCaretPosition;
+		this->selection.EndCaretPosition=args.Selection().EndCaretPosition;
+		updateTextCursor();
+	}
 
-void WinRTImeManager::onSelectionUpdating(
-    winrt::Windows::UI::Text::Core::CoreTextEditContext const& /*context*/,
-    winrt::Windows::UI::Text::Core::CoreTextSelectionUpdatingEventArgs const& args)
-{
-    brls::Logger().debug("---->onSelectionUpdating");
-    this->selection.StartCaretPosition = args.Selection().StartCaretPosition;
-    this->selection.EndCaretPosition   = args.Selection().EndCaretPosition;
-    updateTextCursor();
-}
+	void WinRTImeManager::onTextRequested(
+		winrt::Windows::UI::Text::Core::CoreTextEditContext const& /*context*/,
+		winrt::Windows::UI::Text::Core::CoreTextTextRequestedEventArgs const& args)
+	{
+		brls::Logger().debug("---->onTextRequested");
+		auto request=args.Request();
 
-void WinRTImeManager::onTextRequested(
-    winrt::Windows::UI::Text::Core::CoreTextEditContext const& /*context*/,
-    winrt::Windows::UI::Text::Core::CoreTextTextRequestedEventArgs const& args)
-{
-    brls::Logger().debug("---->onTextRequested");
-    auto request = args.Request();
+		auto range=request.Range();
+		request.Text(this->inputBuffer.substr(
+			range.StartCaretPosition,
+			std::min(range.EndCaretPosition, (int)this->inputBuffer.length()) - range.StartCaretPosition));
+	}
 
-    auto range = request.Range();
-    request.Text(this->inputBuffer.substr(
-        range.StartCaretPosition,
-        std::min(range.EndCaretPosition, (int)this->inputBuffer.length()) - range.StartCaretPosition));
-}
+	void WinRTImeManager::onTextUpdating(
+		winrt::Windows::UI::Text::Core::CoreTextEditContext const& /*context*/,
+		winrt::Windows::UI::Text::Core::CoreTextTextUpdatingEventArgs const& args)
+	{
+		auto range=args.Range();
+		auto newText=args.Text();
+		auto newSelection=args.NewSelection();
 
-void WinRTImeManager::onTextUpdating(
-    winrt::Windows::UI::Text::Core::CoreTextEditContext const& /*context*/,
-    winrt::Windows::UI::Text::Core::CoreTextTextUpdatingEventArgs const& args)
-{
-    auto range        = args.Range();
-    auto newText      = args.Text();
-    auto newSelection = args.NewSelection();
+		brls::Logger().debug("---->onTextUpdating:newText:{},range:{}-{}", winrt::to_string(newText), range.StartCaretPosition, range.EndCaretPosition);
+		this->inputBuffer=inputBuffer.substr(0, range.StartCaretPosition) + newText + inputBuffer.substr(std::min((int)this->inputBuffer.length(), range.EndCaretPosition));
+		brls::Logger().debug("---->onTextUpdating:inputBuffer:{}", winrt::to_string(inputBuffer));
 
-    brls::Logger().debug("---->onTextUpdating:newText:{},range:{}-{}", winrt::to_string(newText), range.StartCaretPosition, range.EndCaretPosition);
+		newSelection.EndCaretPosition=newSelection.StartCaretPosition;
+		this->selection.StartCaretPosition=newSelection.StartCaretPosition;
+		this->selection.EndCaretPosition=newSelection.EndCaretPosition;
+		brls::Logger().debug("---->onTextUpdating:n newselection:{}", this->selection.StartCaretPosition);
+		updateTextCursor();
+		updateText();
+	}
 
-    this->inputBuffer = inputBuffer.substr(0, range.StartCaretPosition) + newText + inputBuffer.substr(std::min((int)this->inputBuffer.length(), range.EndCaretPosition));
+	void WinRTImeManager::updateText()
+	{
+		dialog->setText(winrt::to_string(this->inputBuffer));
+		dialog->setCountText(fmt::format("{}/{}", this->inputBuffer.length(), maxStringLength));
+	};
+	void WinRTImeManager::updateTextCursor()
+	{
+		brls::Logger().debug("---->updateTextCursor:cursor:{}", selection.StartCaretPosition);
+		dialog->setCursor(selection.StartCaretPosition);
+	};
 
-    brls::Logger().debug("---->onTextUpdating:inputBuffer:{}", winrt::to_string(inputBuffer));
+	void WinRTImeManager::openInputDialog(
+		std::function<void(std::string)> cb,
+		std::string headerText,
+		std::string subText,
+		size_t maxStringLength1,
+		std::string initialText)
+	{
+		dialog=new EditTextDialog();
+		this->inputBuffer=winrt::to_hstring(initialText);
+		this->maxStringLength=maxStringLength1;
+		dialog->setHeaderText(headerText);
+		dialog->setHintText(subText);
 
-    newSelection.EndCaretPosition      = newSelection.StartCaretPosition;
-    this->selection.StartCaretPosition = newSelection.StartCaretPosition;
-    this->selection.EndCaretPosition   = newSelection.EndCaretPosition;
-    brls::Logger().debug("---->onTextUpdating:n newselection:{}", this->selection.StartCaretPosition);
-    updateTextCursor();
-    updateText();
-}
+		dialog->getCancelEvent()->subscribe([this]() { this->editContext=nullptr; });
 
-void WinRTImeManager::updateText()
-{
-    dialog->setText(winrt::to_string(this->inputBuffer));
-    dialog->setCountText(fmt::format("{}/{}", this->inputBuffer.length(), maxStringLength));
-};
-void WinRTImeManager::updateTextCursor()
-{
-    brls::Logger().debug("---->updateTextCursor:cursor:{}", selection.StartCaretPosition);
-    dialog->setCursor(selection.StartCaretPosition);
-};
+		dialog->getSubmitEvent()->subscribe([this, cb]() {
+			cb(winrt::to_string(this->inputBuffer));
+			editContext.NotifyFocusLeave();
+			return true; });
 
-void WinRTImeManager::openInputDialog(
-    std::function<void(std::string)> cb,
-    std::string headerText,
-    std::string subText,
-    size_t maxStringLength1,
-    std::string initialText)
-{
-    dialog                = new EditTextDialog();
-    this->inputBuffer     = winrt::to_hstring(initialText);
-    this->maxStringLength = maxStringLength1;
+		dialog->getFocusEvent()->subscribe([this](View* v) { editContext.NotifyFocusEnter(); });
 
-    dialog->setHeaderText(headerText);
-    dialog->setHintText(subText);
+		dialog->getFocusLostEvent()->subscribe([this](View* v) { editContext.NotifyFocusLeave(); });
 
-    // cancel
-    dialog->getCancelEvent()->subscribe([this]()
-        { this->editContext = nullptr; });
+		dialog->registerAction(
+			"hints/left"_i18n, BUTTON_LEFT, [this](...) {
+				if (this->isEditing) return true;
 
-    // submit
-    dialog->getSubmitEvent()->subscribe([this, cb]()
-        {
-            cb(winrt::to_string(this->inputBuffer));
-            editContext.NotifyFocusLeave();
-            return true; });
+				int cursor=selection.StartCaretPosition;
+				if (cursor == (int)CursorPosition::END)
+				{
+					cursor=this->inputBuffer.length() - 1;
+					if (cursor < 0) cursor=0;
 
-    dialog->getFocusEvent()->subscribe([this](View* v)
-        { editContext.NotifyFocusEnter(); });
+				}
+				else if (cursor > (int)CursorPosition::START)
+				{
+					cursor--;
 
-    dialog->getFocusLostEvent()->subscribe([this](View* v)
-        { editContext.NotifyFocusLeave(); });
+				}
+				if (cursor != selection.StartCaretPosition)
+				{
+					selection.StartCaretPosition=cursor;
+					selection.EndCaretPosition=cursor;
+					updateTextCursor();
+					editContext.NotifySelectionChanged(selection);
+				}
 
-    dialog->registerAction(
-        "hints/left"_i18n, BUTTON_LEFT, [this](...)
-        {
-                if (this->isEditing) return true;
+				return true; }, true, true);
+		dialog->registerAction(
+			"hints/right"_i18n, BUTTON_RIGHT, [this](...) {
+				int cursor=selection.StartCaretPosition;
+				if (this->isEditing) return true;
+				if (cursor >= (int)CursorPosition::START)
+				{
+					if (cursor < this->inputBuffer.length())
+					{
+						cursor++;
+					}
+				}
 
-                int cursor = selection.StartCaretPosition;
-                if (cursor == (int)CursorPosition::END)
-                {
-                    cursor = this->inputBuffer.length() - 1;
-                    if(cursor < 0) cursor = 0;
-                  
-                } else if (cursor > (int)CursorPosition::START) {
-                    cursor--;
-              
-                }
-                if (cursor != selection.StartCaretPosition)
-                {
-                    selection.StartCaretPosition = cursor;
-                    selection.EndCaretPosition   = cursor;
-                    updateTextCursor();
-                    editContext.NotifySelectionChanged(selection);
-                }
+				if (cursor != selection.StartCaretPosition)
+				{
+					selection.StartCaretPosition=cursor;
+					selection.EndCaretPosition=cursor;
+					updateTextCursor();
+					editContext.NotifySelectionChanged(selection);
+				}
 
-                return true; }, true, true);
-    dialog->registerAction(
-        "hints/right"_i18n, BUTTON_RIGHT, [this](...)
-        {
-              int cursor = selection.StartCaretPosition;
-                if (this->isEditing) return true;
-                if (cursor >= (int)CursorPosition::START) {
-                    if (cursor < this->inputBuffer.length())
-                    {
-                        cursor++;
-                    }
-                }
+				return true;
+			}, true, true);
 
-                if (cursor != selection.StartCaretPosition)
-                {
-                    selection.StartCaretPosition = cursor;
-                    selection.EndCaretPosition   = cursor;
-                    updateTextCursor();
-                    editContext.NotifySelectionChanged(selection);
-                }
+		dialog->getBackspaceEvent()->subscribe([this](...) {
+			int cursor=selection.StartCaretPosition;
+			auto length=inputBuffer.length();
+			if (inputBuffer.empty())
+			{
+				return true;
+			}
+			if (cursor <= (int)CursorPosition::START || cursor > length)
+			{
+				return true;
+			}
 
-                return true; }, true, true);
+			winrt::Windows::UI::Text::Core::CoreTextRange changed{};
+			changed.StartCaretPosition=cursor - 1;
+			changed.EndCaretPosition=cursor;
+			inputBuffer.erase(changed.StartCaretPosition, 1);
 
-    // delete text
-    dialog->getBackspaceEvent()->subscribe([this](...)
-        {
-            int cursor = selection.StartCaretPosition;
-            auto length=inputBuffer.length();
-            if(inputBuffer.empty()) return true;
-            if (cursor <=(int)CursorPosition::START || cursor > length)
-                return true;
-          
-             winrt::Windows::UI::Text::Core::CoreTextRange changed;
-             changed.StartCaretPosition = cursor-1;
-             changed.EndCaretPosition   = cursor;
-             inputBuffer.erase(changed.StartCaretPosition, 1);
+			selection.StartCaretPosition=changed.StartCaretPosition;
+			selection.EndCaretPosition=changed.StartCaretPosition;
+			editContext.NotifyTextChanged(changed, inputBuffer.length(), selection);
 
-            selection.StartCaretPosition = changed.StartCaretPosition;
-                selection.EndCaretPosition   = changed.StartCaretPosition;
-                editContext.NotifyTextChanged(changed, inputBuffer.length(), selection);
-            updateTextCursor();
-            updateText();
-            return true; });
+			updateTextCursor();
+			updateText();
 
-    // 更新输入法条位置
-    dialog->getLayoutEvent()->subscribe([this](Point p)
-        {
-            if(std::abs(p.x-rect.X) >2 || std::abs(p.y-rect.Y) >2) {
-                rect.X = p.x;
-                rect.Y = p.y;
-                if (editContext)
-                {
-                    editContext.NotifyLayoutChanged();
-                }
-            } });
+			return true;
+			});
 
-    this->selection.StartCaretPosition = this->inputBuffer.length();
-    this->selection.EndCaretPosition   = this->selection.StartCaretPosition;
-    updateText();
-    updateTextCursor();
-    dialog->open();
-}
+		dialog->getLayoutEvent()->subscribe([this](Point p) {
+			if (std::abs(p.x - rect.X) > 2 || std::abs(p.y - rect.Y) > 2)
+			{
+				rect.X=p.x;
+				rect.Y=p.y;
+				if (editContext)
+				{
+					editContext.NotifyLayoutChanged();
+				}
+			}
+			});
 
-bool WinRTImeManager::openForText(std::function<void(std::string)> f, std::string headerText,
-    std::string subText, int maxStringLength, std::string initialText,
-    int kbdDisableBitmask)
-{
-    initCoreText(winrt::Windows::UI::Text::Core::CoreTextInputScope::Text);
-    this->openInputDialog([f](const std::string& text)
-        { f(text); },
-        headerText, subText, maxStringLength, initialText);
-    return true;
-}
+		this->selection.StartCaretPosition=this->inputBuffer.length();
+		this->selection.EndCaretPosition=this->selection.StartCaretPosition;
+		updateText();
+		updateTextCursor();
+		dialog->open();
+	}
 
-bool WinRTImeManager::openForNumber(std::function<void(long)> f, std::string headerText,
-    std::string subText, int maxStringLength, std::string initialText,
-    std::string leftButton, std::string rightButton,
-    int kbdDisableBitmask)
-{
+	bool WinRTImeManager::openForText(std::function<void(std::string)> f, std::string headerText,
+		std::string subText, int maxStringLength, std::string initialText,
+		int kbdDisableBitmask)
+	{
+		initCoreText(winrt::Windows::UI::Text::Core::CoreTextInputScope::Text);
+		this->openInputDialog([f](const std::string& text) { f(text); },
+			headerText, subText, maxStringLength, initialText);
+		return true;
+	}
 
-    initCoreText(winrt::Windows::UI::Text::Core::CoreTextInputScope::Number);
-    this->openInputDialog([f](const std::string& text)
-        {
-            if(text.empty()) return ;
-            try
-            {
-                f(stoll(text));
-            }
-            catch (const std::invalid_argument& e)
-            {
-                Logger::error("Could not parse input, did you enter a valid integer? {}", e.what());
-            }
-            catch (const std::out_of_range& e) {
-                Logger::error("Out of range: {}", e.what());
-            }
-            catch (const std::exception& e)
-            {
-                Logger::error("Unexpected error occurred: {}", e.what());
-            } }, headerText, subText, maxStringLength, initialText);
-    return true;
-}
+	bool WinRTImeManager::openForNumber(std::function<void(long)> f, std::string headerText,
+		std::string subText, int maxStringLength, std::string initialText,
+		std::string leftButton, std::string rightButton,
+		int kbdDisableBitmask)
+	{
+
+		initCoreText(winrt::Windows::UI::Text::Core::CoreTextInputScope::Number);
+		this->openInputDialog([f](const std::string& text) {
+			if (text.empty()) return;
+			try
+			{
+				f(stoll(text));
+			}
+			catch (const std::invalid_argument& e)
+			{
+				Logger::error("Could not parse input, did you enter a valid integer? {}", e.what());
+			}
+			catch (const std::out_of_range& e)
+			{
+				Logger::error("Out of range: {}", e.what());
+			}
+			catch (const std::exception& e)
+			{
+				Logger::error("Unexpected error occurred: {}", e.what());
+			} }, headerText, subText, maxStringLength, initialText);
+			return true;
+	}
 }

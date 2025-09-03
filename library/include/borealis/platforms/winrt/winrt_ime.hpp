@@ -23,72 +23,83 @@ limitations under the License.
 
 namespace brls
 {
-class WinRTImeManager : public ImeManager
-{
-  public:
-    WinRTImeManager(winrt::Windows::UI::Core::CoreWindow coreWindow);
+	class WinRTImeManager: public ImeManager
+	{
+	public:
+		WinRTImeManager(winrt::Windows::UI::Core::CoreWindow coreWindow);
 
-    bool openForText(std::function<void(std::string)> f, std::string headerText = "",
-        std::string subText = "", int maxStringLength = 32, std::string initialText = "",
-        int kbdDisableBitmask = KeyboardKeyDisableBitmask::KEYBOARD_DISABLE_NONE) override;
+		bool openForText(
+			std::function<void(std::string)> f,
+			std::string headerText="",
+			std::string subText="", 
+			int maxStringLength=32, 
+			std::string initialText="",
+			int kbdDisableBitmask=KeyboardKeyDisableBitmask::KEYBOARD_DISABLE_NONE) override;
 
-    bool openForNumber(std::function<void(long)> f, std::string headerText = "",
-        std::string subText = "", int maxStringLength = 18, std::string initialText = "",
-        std::string leftButton = "", std::string rightButton = "",
-        int kbdDisableBitmask = KeyboardKeyDisableBitmask::KEYBOARD_DISABLE_NONE) override;
+		bool openForNumber(
+			std::function<void(long)> f, 
+			std::string headerText="",
+			std::string subText="", 
+			int maxStringLength=18, 
+			std::string initialText="",
+			std::string leftButton="", 
+			std::string rightButton="",
+			int kbdDisableBitmask=KeyboardKeyDisableBitmask::KEYBOARD_DISABLE_NONE) override;
 
-    void openInputDialog(std::function<void(std::string)> cb, std::string headerText,
-        std::string subText, size_t maxStringLength = 50, std::string initialText = "");
-  private:
-    winrt::Windows::UI::Core::CoreWindow coreWindow = nullptr;
+		void openInputDialog(
+			std::function<void(std::string)> cb, 
+			std::string headerText,
+			std::string subText, 
+			size_t maxStringLength=50, 
+			std::string initialText="");
 
-    EditTextDialog* dialog = nullptr;
-    winrt::Windows::UI::Text::Core::CoreTextEditContext editContext = nullptr;
+	private:
+		winrt::Windows::UI::Core::CoreWindow coreWindow=nullptr;
+		winrt::Windows::UI::Text::Core::CoreTextEditContext editContext=nullptr;
+		winrt::Windows::Foundation::Rect rect{};
+		winrt::Windows::UI::Text::Core::CoreTextRange selection{};
+		EditTextDialog* dialog=nullptr;
+		std::wstring inputBuffer{};
+		bool isEditing=false;
+		size_t maxStringLength=100;
 
-    size_t maxStringLength = 100;
-    std::wstring inputBuffer;
+		void initCoreText(winrt::Windows::UI::Text::Core::CoreTextInputScope scope);
 
-    winrt::Windows::Foundation::Rect rect;//���뷨λ��
-    winrt::Windows::UI::Text::Core::CoreTextRange selection;//��ǰѡ��λ��
-    bool isEditing; 
-    
-    // helper to initialize the context
-    void initCoreText(winrt::Windows::UI::Text::Core::CoreTextInputScope scope);
+		void onLayoutRequested(
+			winrt::Windows::UI::Text::Core::CoreTextEditContext const& context,
+			winrt::Windows::UI::Text::Core::CoreTextLayoutRequestedEventArgs const& args);
 
-    void onLayoutRequested2(
-        winrt::Windows::UI::Text::Core::CoreTextEditContext const& context,
-        winrt::Windows::UI::Text::Core::CoreTextLayoutRequestedEventArgs const& args);
+		void onFormatUpdating(
+			winrt::Windows::UI::Text::Core::CoreTextEditContext const&,
+			winrt::Windows::UI::Text::Core::CoreTextFormatUpdatingEventArgs const& args);
 
-    void onFormatUpdating(winrt::Windows::UI::Text::Core::CoreTextEditContext const&, winrt::Windows::UI::Text::Core::CoreTextFormatUpdatingEventArgs const& args);
+		void onCompositionStarted(
+			winrt::Windows::UI::Text::Core::CoreTextEditContext const& context,
+			winrt::Windows::UI::Text::Core::CoreTextCompositionStartedEventArgs const& args);
 
-    // event handlers
-    void onCompositionStarted(
-        winrt::Windows::UI::Text::Core::CoreTextEditContext const& context,
-        winrt::Windows::UI::Text::Core::CoreTextCompositionStartedEventArgs const& args);
+		void onSelectionUpdating(
+			winrt::Windows::UI::Text::Core::CoreTextEditContext const& /*context*/,
+			winrt::Windows::UI::Text::Core::CoreTextSelectionUpdatingEventArgs const& args);
 
-    void onSelectionUpdating(
-        winrt::Windows::UI::Text::Core::CoreTextEditContext const& /*context*/,
-        winrt::Windows::UI::Text::Core::CoreTextSelectionUpdatingEventArgs const& args);
+		void onCompositionCompleted(
+			winrt::Windows::UI::Text::Core::CoreTextEditContext const& context,
+			winrt::Windows::UI::Text::Core::CoreTextCompositionCompletedEventArgs const& args);
 
-    void onCompositionCompleted(
-        winrt::Windows::UI::Text::Core::CoreTextEditContext const& context,
-        winrt::Windows::UI::Text::Core::CoreTextCompositionCompletedEventArgs const& args);
+		void onSelectionRequested(
+			winrt::Windows::UI::Text::Core::CoreTextEditContext const& /*context*/,
+			winrt::Windows::UI::Text::Core::CoreTextSelectionRequestedEventArgs const& args);
 
-   void onSelectionRequested(
-        winrt::Windows::UI::Text::Core::CoreTextEditContext const& /*context*/,
-        winrt::Windows::UI::Text::Core::CoreTextSelectionRequestedEventArgs const& args);
+		void onTextRequested(
+			winrt::Windows::UI::Text::Core::CoreTextEditContext const& context,
+			winrt::Windows::UI::Text::Core::CoreTextTextRequestedEventArgs const& args);
 
-    // new handlers
-    void onTextRequested(
-        winrt::Windows::UI::Text::Core::CoreTextEditContext const& context,
-        winrt::Windows::UI::Text::Core::CoreTextTextRequestedEventArgs const& args);
+		void onTextUpdating(
+			winrt::Windows::UI::Text::Core::CoreTextEditContext const& context,
+			winrt::Windows::UI::Text::Core::CoreTextTextUpdatingEventArgs const& args);
 
-    void onTextUpdating(
-        winrt::Windows::UI::Text::Core::CoreTextEditContext const& context,
-        winrt::Windows::UI::Text::Core::CoreTextTextUpdatingEventArgs const& args);
+		void updateText();
 
-    void updateText();
-    void updateTextCursor();
+		void updateTextCursor();
 
-};
+	};
 }
