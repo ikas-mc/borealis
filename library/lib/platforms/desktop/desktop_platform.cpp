@@ -651,15 +651,7 @@ void DesktopPlatform::disableScreenDimming(bool disable, const std::string& reas
 
     if (disable)
     {
-<<<<<<< .mine
-#ifdef ANDROID
-
-#elif defined(IOS) || defined(TVOS)
-=======
 #ifdef __SDL2__
-
-
->>>>>>> .theirs
 #elif defined(__linux__)
         inhibitCookie = dbusInhibit(dbus_conn.get(), app, reason);
 #elif __APPLE__
@@ -676,7 +668,7 @@ void DesktopPlatform::disableScreenDimming(bool disable, const std::string& reas
         }
         catch(const std::exception& e)
         {
-              Logger::warning("Winrt DisplayRequest release failed {}", e.what());
+              Logger::warning("Winrt DisplayRequest active failed {}", e.what());
         }
 #elif _WIN32
         SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_CONTINUOUS);
@@ -690,7 +682,15 @@ void DesktopPlatform::disableScreenDimming(bool disable, const std::string& reas
             dbusUnInhibit(dbus_conn.get(), inhibitCookie);
 #elif __APPLE__
         IOPMAssertionRelease(assertionID);
-
+#elif __WINRT__
+        try
+        {
+            displayRequest.RequestRelease();
+        }
+        catch (const std::exception& e)
+        {
+            Logger::warning("Winrt DisplayRequest release failed {}", e.what());
+        }
 #elif _WIN32
         SetThreadExecutionState(ES_CONTINUOUS);
 #endif
