@@ -66,7 +66,7 @@ else()
 endif()
 
 # dbus
-if (UNIX AND NOT APPLE AND NOT ANDROID)
+if (UNIX AND NOT APPLE AND NOT USE_SDL2)
     find_package(DBus)
     list(APPEND BOREALIS_INCLUDE ${DBUS_INCLUDE_DIRS})
     list(APPEND BRLS_PLATFORM_LIBS ${DBUS_LIBRARIES})
@@ -261,7 +261,7 @@ list(APPEND BOREALIS_SOURCE
         ${BOREALIS_PATH}/lib/extern/libretro-common/encodings
         ${BOREALIS_PATH}/lib/extern/libretro-common/features
         )
-if (PLATFORM_PSV OR PLATFORM_PS4)
+if (PLATFORM_PSV OR PLATFORM_PS4 OR BOREALIS_USE_D3D11)
         list(REMOVE_ITEM BOREALIS_SOURCE ${BOREALIS_PATH}/lib/extern/glad)
 endif ()
 

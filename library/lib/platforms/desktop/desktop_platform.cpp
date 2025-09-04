@@ -194,7 +194,7 @@ int darwin_get_powerstate()
     CFRelease(blob);
     return capacity;
 }
-#elif ANDROID
+#elif __SDL2__
 
 #elif defined(__linux__)
 // Thanks to: https://github.com/videolan/vlc/blob/master/modules/misc/inhibit/dbus.c
@@ -464,7 +464,7 @@ DesktopPlatform::DesktopPlatform()
     this->fontLoader = new DesktopFontLoader();
     this->imeManager = new DesktopImeManager();
 
-#if defined(__linux__) && !defined(ANDROID)
+#if defined(__linux__) && !defined(__SDL2__)
     probeInhibitor(dbus_conn.get());
 #endif
 }
@@ -651,9 +651,15 @@ void DesktopPlatform::disableScreenDimming(bool disable, const std::string& reas
 
     if (disable)
     {
+<<<<<<< .mine
 #ifdef ANDROID
 
 #elif defined(IOS) || defined(TVOS)
+=======
+#ifdef __SDL2__
+
+
+>>>>>>> .theirs
 #elif defined(__linux__)
         inhibitCookie = dbusInhibit(dbus_conn.get(), app, reason);
 #elif __APPLE__
@@ -678,23 +684,13 @@ void DesktopPlatform::disableScreenDimming(bool disable, const std::string& reas
     }
     else
     {
-#ifdef ANDROID
-
-#elif defined(IOS) || defined(TVOS)
+#ifdef __SDL2__
 #elif defined(__linux__)
         if (inhibitCookie != 0)
             dbusUnInhibit(dbus_conn.get(), inhibitCookie);
 #elif __APPLE__
         IOPMAssertionRelease(assertionID);
-#elif __WINRT__
-        try
-        {
-            displayRequest.RequestRelease();
-        }
-        catch(const std::exception& e)
-        {
-              Logger::warning("Winrt DisplayRequest active failed {}", e.what());
-        }
+
 #elif _WIN32
         SetThreadExecutionState(ES_CONTINUOUS);
 #endif

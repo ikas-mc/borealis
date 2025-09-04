@@ -197,6 +197,8 @@ class Application
 
     static bool isInputBlocks();
 
+    static const ControllerState& getControllerState();
+
     static void setCommonFooter(std::string footer);
     static std::string* getCommonFooter();
 
@@ -385,6 +387,7 @@ class Application
     inline static std::vector<BrlsKeyState> watchedKeys;
     inline static std::vector<BrlsKeyState> oldWatchedKeys;
     inline static std::unordered_map<int, int> watchedKeysMap;
+    inline static ControllerState controllerState = {};
 
     inline static void processInput();
     inline static bool internalMainLoop();
