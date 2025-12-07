@@ -580,6 +580,8 @@ bool DesktopPlatform::hasEthernetConnection()
     if (globalRef)
     {
         CFDictionaryGetValueIfPresent(globalRef, kSCDynamicStorePropNetPrimaryInterface, &primaryIf);
+            if (primaryIf)
+                CFRetain(primaryIf);
         CFRelease(globalRef);
     }
     CFRelease(storeRef);
@@ -603,6 +605,7 @@ bool DesktopPlatform::hasEthernetConnection()
         }
         CFRelease(iflist);
     }
+    CFRelease(primaryIf);
 #elif defined(_WIN32)
     PIP_ADAPTER_ADDRESSES addrs = nullptr;
     ULONG outlen = sizeof(IP_ADAPTER_ADDRESSES), ret = 0, curindex = 0;

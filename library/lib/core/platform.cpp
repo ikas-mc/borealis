@@ -32,15 +32,12 @@
 #include <borealis/platforms/ps4/ps4_platform.hpp>
 #endif
 
-#ifdef __GLFW__
+#if defined(BOREALIS_USE_DEKO3D)
+#elif defined(__GLFW__)
 #include <borealis/platforms/glfw/glfw_platform.hpp>
-#endif
-
-#ifdef __WINRT_NEW__
+#elif defined(__WINRT_NEW__)
 #include <borealis/platforms/winrt/winrt_platform.hpp>
-#endif
-
-#ifdef __SDL2__
+#elif defined(__SDL2__)
 #include <borealis/platforms/sdl/sdl_platform.hpp>
 #endif
 
