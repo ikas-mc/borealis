@@ -106,7 +106,7 @@ WinRTAudioPlayer::~WinRTAudioPlayer()
     {
         if (sounds[i])
         {
-			delete sounds[i];
+            delete sounds[i];
             sounds[i] = nullptr;
         }
     }

@@ -1,18 +1,18 @@
 /*
-		Copyright 2021 natinusala
-		Copyright 2025 ikas-mc
+        Copyright 2021 natinusala
+        Copyright 2025 ikas-mc
 
-		Licensed under the Apache License, Version 2.0 (the "License");
-		you may not use this file except in compliance with the License.
-		You may obtain a copy of the License at
+        Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License.
+        You may obtain a copy of the License at
 
-				http://www.apache.org/licenses/LICENSE-2.0
+            http://www.apache.org/licenses/LICENSE-2.0
 
-		Unless required by applicable law or agreed to in writing, software
-		distributed under the License is distributed on an "AS IS" BASIS,
-		WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-		See the License for the specific language governing permissions and
-		limitations under the License.
+        Unless required by applicable law or agreed to in writing, software
+        distributed under the License is distributed on an "AS IS" BASIS,
+        WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+        See the License for the specific language governing permissions and
+        limitations under the License.
 */
 #include <borealis/core/application.hpp>
 #include <borealis/core/logger.hpp>
@@ -41,183 +41,184 @@ std::unique_ptr<brls::D3D11Context> D3D11_CONTEXT;
 namespace brls
 {
 
-	static double scaleFactor=1.0;
+static double scaleFactor = 1.0;
 
-	static winrt::Windows::Foundation::Rect getWindowRawSize(winrt::Windows::Foundation::Rect coreWindowSize, double scaleFactor)
-	{
-		winrt::Windows::Foundation::Rect rect{};
-		bool isXbox=winrt::Windows::System::Profile::AnalyticsInfo::VersionInfo().DeviceFamily() == L"Windows.Xbox";
-		if (isXbox)
-		{
-			GAMING_DEVICE_MODEL_INFORMATION infos;
-			if (SUCCEEDED(GetGamingDeviceModelInformation(&infos)))
-			{
-				if (infos.deviceId == GAMING_DEVICE_DEVICE_ID_XBOX_SERIES_X
-					|| infos.deviceId == GAMING_DEVICE_DEVICE_ID_XBOX_SERIES_X_DEVKIT
-					|| infos.deviceId == GAMING_DEVICE_DEVICE_ID_XBOX_ONE_X
-					|| infos.deviceId == GAMING_DEVICE_DEVICE_ID_XBOX_ONE_X_DEVKIT
-					|| infos.deviceId == GAMING_DEVICE_DEVICE_ID_XBOX_ONE_S)
-				{
-					auto hdmiDisplayInformation=winrt::Windows::Graphics::Display::Core::HdmiDisplayInformation::GetForCurrentView();
-					auto currentDisplayMode=hdmiDisplayInformation.GetCurrentDisplayMode();
-					rect.Width=currentDisplayMode.ResolutionWidthInRawPixels();
-					rect.Height=currentDisplayMode.ResolutionHeightInRawPixels();
-					rect.X=0;
-					rect.Y=0;
-					return rect;
-				}
-			}
-		}
+static winrt::Windows::Foundation::Rect getWindowRawSize(winrt::Windows::Foundation::Rect coreWindowSize, double scaleFactor)
+{
+    winrt::Windows::Foundation::Rect rect {};
+    bool isXbox = winrt::Windows::System::Profile::AnalyticsInfo::VersionInfo().DeviceFamily() == L"Windows.Xbox";
+    if (isXbox)
+    {
+        GAMING_DEVICE_MODEL_INFORMATION infos;
+        if (SUCCEEDED(GetGamingDeviceModelInformation(&infos)))
+        {
+            if (infos.deviceId == GAMING_DEVICE_DEVICE_ID_XBOX_SERIES_X
+                || infos.deviceId == GAMING_DEVICE_DEVICE_ID_XBOX_SERIES_X_DEVKIT
+                || infos.deviceId == GAMING_DEVICE_DEVICE_ID_XBOX_ONE_X
+                || infos.deviceId == GAMING_DEVICE_DEVICE_ID_XBOX_ONE_X_DEVKIT
+                || infos.deviceId == GAMING_DEVICE_DEVICE_ID_XBOX_ONE_S)
+            {
+                auto hdmiDisplayInformation = winrt::Windows::Graphics::Display::Core::HdmiDisplayInformation::GetForCurrentView();
+                auto currentDisplayMode     = hdmiDisplayInformation.GetCurrentDisplayMode();
+                rect.Width                  = currentDisplayMode.ResolutionWidthInRawPixels();
+                rect.Height                 = currentDisplayMode.ResolutionHeightInRawPixels();
+                rect.X                      = 0;
+                rect.Y                      = 0;
+                return rect;
+            }
+        }
+    }
 
-		rect.Width=coreWindowSize.Width * scaleFactor;
-		rect.Height=coreWindowSize.Height * scaleFactor;
-		rect.X=coreWindowSize.X * scaleFactor;
-		rect.Y=coreWindowSize.Y * scaleFactor;
-		return rect;
-	}
+    rect.Width  = coreWindowSize.Width * scaleFactor;
+    rect.Height = coreWindowSize.Height * scaleFactor;
+    rect.X      = coreWindowSize.X * scaleFactor;
+    rect.Y      = coreWindowSize.Y * scaleFactor;
+    return rect;
+}
 
-	static void updateWindowSize(winrt::Windows::Foundation::Rect coreWindowSize)
-	{
-		scaleFactor=D3D11_CONTEXT->getScaleFactor();
-		auto windowRawSize=getWindowRawSize(coreWindowSize, scaleFactor);
+static void updateWindowSize(winrt::Windows::Foundation::Rect coreWindowSize)
+{
+    scaleFactor        = D3D11_CONTEXT->getScaleFactor();
+    auto windowRawSize = getWindowRawSize(coreWindowSize, scaleFactor);
 
-		D3D11_CONTEXT->onFramebufferSize(windowRawSize.Width, windowRawSize.Height);
-		Application::onWindowResized(windowRawSize.Width, windowRawSize.Height);
-		if (!VideoContext::FULLSCREEN)
-		{
-			VideoContext::sizeW=windowRawSize.Width;
-			VideoContext::sizeH=windowRawSize.Height;
-			if (windowRawSize.X >= 0)
-			{
-				VideoContext::posX=(float)windowRawSize.X;
-			}
-			if (windowRawSize.Y >= 0)
-			{
-				VideoContext::posY=(float)windowRawSize.Y;
-			}
-		}
-	}
+    D3D11_CONTEXT->onFramebufferSize(windowRawSize.Width, windowRawSize.Height);
+    Application::onWindowResized(windowRawSize.Width, windowRawSize.Height);
+    if (!VideoContext::FULLSCREEN)
+    {
+        VideoContext::sizeW = windowRawSize.Width;
+        VideoContext::sizeH = windowRawSize.Height;
+        if (windowRawSize.X >= 0)
+        {
+            VideoContext::posX = (float)windowRawSize.X;
+        }
+        if (windowRawSize.Y >= 0)
+        {
+            VideoContext::posY = (float)windowRawSize.Y;
+        }
+    }
+}
 
-	WinRTVideoContext::WinRTVideoContext(winrt::Windows::UI::Core::CoreWindow coreWindow, std::string windowTitle, uint32_t windowWidth, uint32_t windowHeight, float windowXPos, float windowYPos)
-	{
-		if (VideoContext::FULLSCREEN)
-		{
-			bool result=winrt::Windows::UI::ViewManagement::ApplicationView::GetForCurrentView().TryEnterFullScreenMode();
-			VideoContext::FULLSCREEN=result;
-		}
+WinRTVideoContext::WinRTVideoContext(winrt::Windows::UI::Core::CoreWindow coreWindow, std::string windowTitle, uint32_t windowWidth, uint32_t windowHeight, float windowXPos, float windowYPos)
+{
+    if (VideoContext::FULLSCREEN)
+    {
+        bool result              = winrt::Windows::UI::ViewManagement::ApplicationView::GetForCurrentView().TryEnterFullScreenMode();
+        VideoContext::FULLSCREEN = result;
+    }
 
-		using namespace winrt::Windows::UI::Core;
+    using namespace winrt::Windows::UI::Core;
 
-		coreWindow.SizeChanged([&](winrt::Windows::Foundation::IInspectable const&, winrt::Windows::UI::Core::WindowSizeChangedEventArgs const& args) {
+    coreWindow.SizeChanged([&](winrt::Windows::Foundation::IInspectable const&, winrt::Windows::UI::Core::WindowSizeChangedEventArgs const& args)
+        {
 			winrt::Windows::Foundation::Rect rect{ -1,-1,args.Size().Width,args.Size().Height };
 			updateWindowSize(rect); });
 
-		this->window=reinterpret_cast<ABI::Windows::UI::Core::ICoreWindow*>(winrt::get_abi(coreWindow));
+    this->window = reinterpret_cast<ABI::Windows::UI::Core::ICoreWindow*>(winrt::get_abi(coreWindow));
 
-		if (!this->window)
-		{
-			fatal("winrt: failed to create window");
-		}
+    if (!this->window)
+    {
+        fatal("winrt: failed to create window");
+    }
 
-		Logger::info("winrt: USE_D3D11");
-		// TODO
-		bool enalbeTearing=VideoContext::swapInterval == 0;
-		Logger::debug("winrt: USE_D3D11 enalbeTearing:{}", enalbeTearing);
-		D3D11_CONTEXT=std::make_unique<D3D11Context>(this->window, windowWidth, windowHeight, enalbeTearing);
-		D3D11_CONTEXT->setSwapInterval(VideoContext::swapInterval);
+    Logger::info("winrt: USE_D3D11");
+    // TODO
+    bool enalbeTearing = VideoContext::swapInterval == 0;
+    Logger::debug("winrt: USE_D3D11 enalbeTearing:{}", enalbeTearing);
+    D3D11_CONTEXT = std::make_unique<D3D11Context>(this->window, windowWidth, windowHeight, enalbeTearing);
+    D3D11_CONTEXT->setSwapInterval(VideoContext::swapInterval);
 
-		this->nvgContext=nvgCreateD3D11(D3D11_CONTEXT->getDevice(), NVG_ANTIALIAS | NVG_STENCIL_STROKES);
-		if (!this->nvgContext)
-		{
-			brls::fatal("winrt: unable to init nanovg");
-		}
+    this->nvgContext = nvgCreateD3D11(D3D11_CONTEXT->getDevice(), NVG_ANTIALIAS | NVG_STENCIL_STROKES);
+    if (!this->nvgContext)
+    {
+        brls::fatal("winrt: unable to init nanovg");
+    }
 
-		scaleFactor=D3D11_CONTEXT->getScaleFactor();
-		auto windowRawSize=getWindowRawSize(coreWindow.Bounds(), scaleFactor);
+    scaleFactor        = D3D11_CONTEXT->getScaleFactor();
+    auto windowRawSize = getWindowRawSize(coreWindow.Bounds(), scaleFactor);
 
-		Application::setWindowSize(windowRawSize.Width, windowRawSize.Height);
-		D3D11_CONTEXT->onFramebufferSize(windowRawSize.Width, windowRawSize.Height);
+    Application::setWindowSize(windowRawSize.Width, windowRawSize.Height);
+    D3D11_CONTEXT->onFramebufferSize(windowRawSize.Width, windowRawSize.Height);
 
-		if (!VideoContext::FULLSCREEN)
-		{
-			VideoContext::sizeW=windowRawSize.Width;
-			VideoContext::sizeH=windowRawSize.Height;
-			VideoContext::posX=(float)windowRawSize.X;
-			VideoContext::posY=(float)windowRawSize.Y;
-		}
-	}
+    if (!VideoContext::FULLSCREEN)
+    {
+        VideoContext::sizeW = windowRawSize.Width;
+        VideoContext::sizeH = windowRawSize.Height;
+        VideoContext::posX  = (float)windowRawSize.X;
+        VideoContext::posY  = (float)windowRawSize.Y;
+    }
+}
 
-	void WinRTVideoContext::beginFrame()
-	{
-		D3D11_CONTEXT->beginFrame();
-	}
+void WinRTVideoContext::beginFrame()
+{
+    D3D11_CONTEXT->beginFrame();
+}
 
-	void WinRTVideoContext::endFrame()
-	{
-		D3D11_CONTEXT->endFrame();
-	}
+void WinRTVideoContext::endFrame()
+{
+    D3D11_CONTEXT->endFrame();
+}
 
-	void WinRTVideoContext::setSwapInterval(int interval)
-	{
-		VideoContext::swapInterval=interval;
-		D3D11_CONTEXT->setSwapInterval(interval);
-	}
+void WinRTVideoContext::setSwapInterval(int interval)
+{
+    VideoContext::swapInterval = interval;
+    D3D11_CONTEXT->setSwapInterval(interval);
+}
 
-	void WinRTVideoContext::clear(NVGcolor color)
-	{
-		D3D11_CONTEXT->clear(nvgRGBAf(
-			color.r,
-			color.g,
-			color.b,
-			color.a));
-	}
+void WinRTVideoContext::clear(NVGcolor color)
+{
+    D3D11_CONTEXT->clear(nvgRGBAf(
+        color.r,
+        color.g,
+        color.b,
+        color.a));
+}
 
-	void WinRTVideoContext::resetState()
-	{
-	}
+void WinRTVideoContext::resetState()
+{
+}
 
-	double WinRTVideoContext::getScaleFactor()
-	{
-		return scaleFactor;
-	}
+double WinRTVideoContext::getScaleFactor()
+{
+    return scaleFactor;
+}
 
-	WinRTVideoContext::~WinRTVideoContext()
-	{
-		try
-		{
-			if (this->nvgContext)
-			{
+WinRTVideoContext::~WinRTVideoContext()
+{
+    try
+    {
+        if (this->nvgContext)
+        {
 
-				nvgDeleteD3D11(this->nvgContext);
-				D3D11_CONTEXT=nullptr;
-			}
-		}
-		catch (...)
-		{
-			Logger::error("Cannot delete nvg Context");
-		}
-	}
+            nvgDeleteD3D11(this->nvgContext);
+            D3D11_CONTEXT = nullptr;
+        }
+    }
+    catch (...)
+    {
+        Logger::error("Cannot delete nvg Context");
+    }
+}
 
-	NVGcontext* WinRTVideoContext::getNVGContext()
-	{
-		return this->nvgContext;
-	}
+NVGcontext* WinRTVideoContext::getNVGContext()
+{
+    return this->nvgContext;
+}
 
-	ABI::Windows::UI::Core::ICoreWindow* WinRTVideoContext::getWindow()
-	{
-		return this->window;
-	}
+ABI::Windows::UI::Core::ICoreWindow* WinRTVideoContext::getWindow()
+{
+    return this->window;
+}
 
-	void WinRTVideoContext::fullScreen(bool fs)
-	{
-		if (fs)
-		{
-			winrt::Windows::UI::ViewManagement::ApplicationView::GetForCurrentView().TryEnterFullScreenMode();
-		}
-		else
-		{
-			winrt::Windows::UI::ViewManagement::ApplicationView::GetForCurrentView().ExitFullScreenMode();
-		}
-	}
+void WinRTVideoContext::fullScreen(bool fs)
+{
+    if (fs)
+    {
+        winrt::Windows::UI::ViewManagement::ApplicationView::GetForCurrentView().TryEnterFullScreenMode();
+    }
+    else
+    {
+        winrt::Windows::UI::ViewManagement::ApplicationView::GetForCurrentView().ExitFullScreenMode();
+    }
+}
 
 } // namespace brls
