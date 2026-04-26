@@ -454,6 +454,8 @@ void Application::processInput()
 
 void Application::addToWatchedKeys(const BrlsKeyCombination key)
 {
+    if (key.code == BRLS_KBD_KEY_UNKNOWN)
+        return;
     if (watchedKeysMap.count(key) == 0 || watchedKeysMap[key] <= 0)
     {
         watchedKeysMap[key] = 0;
@@ -465,6 +467,8 @@ void Application::addToWatchedKeys(const BrlsKeyCombination key)
 
 void Application::removeWatchedKeys(const BrlsKeyCombination key)
 {
+    if (key.code == BRLS_KBD_KEY_UNKNOWN)
+        return;
     if (watchedKeysMap.count(key) == 0 || watchedKeysMap[key] <= 0)
     {
         // Key is not watched, nothing to do

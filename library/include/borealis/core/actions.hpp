@@ -35,10 +35,15 @@ typedef int BrlsKeyCode;
 struct BrlsKeyCombination
 {
     BrlsKeyboardScancode code;
-    int mod;
+    int mod{};
 
     explicit BrlsKeyCombination(const int key)
     {
+        if (key == BRLS_KBD_KEY_UNKNOWN)
+        {
+            code = BRLS_KBD_KEY_UNKNOWN;
+            return;
+        }
         code = static_cast<BrlsKeyboardScancode>(key & 0xFFFF);
         mod  = static_cast<BrlsKeyboardModifiers>((key >> 16) & 0xFFFF);
     }
